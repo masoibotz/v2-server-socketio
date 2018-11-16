@@ -18,9 +18,9 @@ app.use(bodyParser.json())
 app.use(cors())
 
 const stageTimeoutArr = {
-	"night": 1 * 60 * 1000,
-	"discuss": 5 * 60 * 1000,
-	"voteyesno": 1 * 60 * 1000
+	"night": 10 * 1000,
+	"discuss": 10 * 1000,
+	"voteyesno": 10 * 1000
 }
 const nextStageArr = {
 	"night": "discuss",
@@ -92,11 +92,11 @@ function randomRole(roomID) {
 		})
 		roomDB(collection => {
 			collection.findOneAndUpdate({ roomChatID: roomID }, {
-				$set: { status: 'ingame', dayStage: 'day', stageTimeout: new Date(Date.now() + stageTimeoutArr['night']).toISOString(), setup: setup }
+				$set: { status: 'ingame', dayStage: 'night', stageTimeout: new Date(Date.now() + stageTimeoutArr['night']).toISOString(), setup: setup }
 			}, { returnOriginal: false }, function (err, res) {
 				if (err) throw err;
 				console.log(`Phòng ${roomID}: Chọn ngẫu nhiên nhân vật...`);
-				sendAction(roomID, 'goStage', res.value);
+				sendAction(roomID, 'loadRole', res.value);
 			});
 		})
 	}).catch(err => console.log(err))
@@ -109,7 +109,7 @@ function goStage(roomID, stage) {
 		}, { returnOriginal: false }, function (err, res) {
 			if (err) throw err;
 			console.log(`Phòng ${roomID}: Stage ${stage}`);
-			sendAction(roomID, 'goStage', res.value);
+			sendAction(roomID, `goStage${stage}`, res.value);
 
 			//next stage
 			const nextStage = nextStageArr[stage];
@@ -149,7 +149,8 @@ app.get('/play/:roomID/do', (req, res) => {
 })
 
 app.post('/reg', (req, res) => {
-	const { id, name } = req.body
+	const { id, name } = req.body;
+	console.log(`[+] REG for user: ${req.id}`);
 	chatkit.createUser({
 		id: id,
 		name: name,
@@ -177,6 +178,7 @@ app.post('/reg', (req, res) => {
 	});
 })
 app.post('/auth', (req, res) => {
+	console.log(`[+] LOGIN for user: ${req.query.user_id}`);
 	const authData = chatkit.authenticate({
 		userId: req.query.user_id
 	});
@@ -208,7 +210,8 @@ app.get('/play/:roomID/ready', (req, res) => {
 	});
 })
 app.get('/play/:roomID/getUser', (req, res) => {
-	const roomID = req.params.room_id;
+	const roomID = req.params.roomID;
+	console.log(`GET: /play/${roomID}/getUser`);
 	chatkit.getRoom({
 		roomId: "20509498",
 	}).then(room => {
@@ -234,12 +237,12 @@ app.get('/loadRole', (req, res) => {
 })
 app.get('/room/:roomID/status', (req, res) => {
 	const roomID = req.params.roomID;
+	console.log(`GET: /room/${roomID}/status`);
 	MongoClient.connect('mongodb+srv://root:root@cluster0-7wmps.mongodb.net/test?retryWrites=true', { useNewUrlParser: true }, function (err, client) {
 		const collection = client.db("masoi").collection("room");
 		collection.findOne({ roomChatID: roomID }, function (err, result) {
 			if (err) throw err;
 			res.status(200).json(result)
-			console.log(result);
 		});
 		client.close();
 	});
