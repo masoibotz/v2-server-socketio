@@ -126,6 +126,10 @@ function startGame(roomID) {
 	randomRole(roomID);
 	goStage(roomID, 'night');
 }
+function endGame(roomID) {
+	console.log(`Phòng ${roomID}: ENDGAME BETA...`);
+	schedule.cancelJob();
+}
 function updateRoleAction(roomID, roleAction) {
 	roomDB(collection => {
 		collection.updateOne({ roomChatID: roomID }, {
@@ -136,6 +140,11 @@ function updateRoleAction(roomID, roleAction) {
 		});
 	})
 }
+app.get('/end', (req, res) => {
+	const roomID = req.params.roomID;
+	endGame(roomID);
+	res.status(200).json({ success: true });
+})
 app.get('/play/:roomID/start', (req, res) => {
 	const roomID = req.params.roomID;
 	startGame(roomID);
