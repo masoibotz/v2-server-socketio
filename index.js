@@ -19,7 +19,7 @@ app.use(cors())
 
 const stageTimeoutArr = {
 	"night": 10 * 1000,
-	"discuss": 10 * 1000,
+	"discuss": 1 * 60 * 1000,
 	"voteyesno": 10 * 1000
 }
 const nextStageArr = {
@@ -128,7 +128,7 @@ function startGame(roomID) {
 }
 function endGame(roomID) {
 	console.log(`Phòng ${roomID}: ENDGAME BETA...`);
-	schedule.cancelJob();
+	schedule.cancel();
 }
 function updateRoleAction(roomID, roleAction) {
 	roomDB(collection => {
@@ -140,7 +140,7 @@ function updateRoleAction(roomID, roleAction) {
 		});
 	})
 }
-app.get('/end', (req, res) => {
+app.get('/end/:roomID', (req, res) => {
 	const roomID = req.params.roomID;
 	endGame(roomID);
 	res.status(200).json({ success: true });
