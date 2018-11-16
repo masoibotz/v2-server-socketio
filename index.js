@@ -41,13 +41,13 @@ function sendMessage(roomID, text) {
 		roomId: roomID,
 		text: text,
 	})
-	.then(res => console.log('bot send'))
-	.catch(err => console.error(err))
+		.then(res => console.log('bot send'))
+		.catch(err => console.error(err))
 }
-function sendAction(roomID, actionName, data={}) {
+function sendAction(roomID, actionName, data = {}) {
 	sendMessage(roomID, JSON.stringify({
 		action: actionName,
-		text: `click to activate ${actionName}`,
+		text: `CMD:${actionName}`,
 		data: data
 	}))
 }
@@ -72,7 +72,7 @@ function getUserFromChatRoom(roomID) {
 	})
 }
 function getRoomState(roomID) {
-	return new Promise((resolve, reject)=>{
+	return new Promise((resolve, reject) => {
 		roomDB(collection => {
 			collection.findOne({ roomChatID: roomID }, function (err, result) {
 				if (err) throw err;
@@ -86,15 +86,15 @@ function randomRole(roomID) {
 		var readyUser = users.filter(u => {
 			return u.custom_data.ready;
 		})
-		var setup = {"0": [], "-1":[]}
+		var setup = { "0": [], "-1": [] }
 		readyUser.forEach(u => {
 			let roleID = Math.random() <= 0.5 ? -1 : 0;
 			setup[roleID] = [...setup[roleID], u.id];
 		})
 		roomDB(collection => {
 			collection.findOneAndUpdate({ roomChatID: roomID }, {
-				$set: {status: 'ingame', dayStage: 'day', stageTimeout: new Date(Date.now() + stageTimeoutArr['night']).toISOString() ,setup: setup}
-			}, { returnOriginal:false }, function (err, res) {
+				$set: { status: 'ingame', dayStage: 'day', stageTimeout: new Date(Date.now() + stageTimeoutArr['night']).toISOString(), setup: setup }
+			}, { returnOriginal: false }, function (err, res) {
 				if (err) throw err;
 				console.log(`Phòng ${roomID}: Chọn ngẫu nhiên nhân vật...`);
 				sendAction(roomID, 'goStage', res);
@@ -103,20 +103,23 @@ function randomRole(roomID) {
 	}).catch(err => console.log(err))
 }
 function goStage(roomID, stage) {
+	let endTimer = new Date(Date.now() + stageTimeoutArr[stage]);
 	roomDB(collection => {
 		collection.findOneAndUpdate({ roomChatID: roomID }, {
-			$set: {dayStage: stage, stageTimeout: new Date(Date.now() + stageTimeoutArr[stage]).toISOString()}
-		}, { returnOriginal:false }, function (err, res) {
+			$set: { dayStage: stage, stageTimeout: endTimer.toISOString() }
+		}, { returnOriginal: false }, function (err, res) {
 			if (err) throw err;
 			console.log(`Phòng ${roomID}: Stage ${stage}`);
 			sendAction(roomID, 'goStage', res);
+
+			//next stage
+			const nextStage = nextStageArr[stage];
+			if (res.status != 'ending') {
+				schedule.scheduleJob(endTimer, () => {
+					goStage(roomID, nextStage);
+				})
+			};
 		});
-	})
-	//next stage
-	const nextStage = nextStageArr[stage];
-	let time = new Date(Date.now() + stageTimeoutArr[nextStage]);
-	schedule.scheduleJob(time, ()=>{
-		goStage(roomID, nextStage);
 	})
 }
 function startGame(roomID) {
@@ -134,14 +137,14 @@ function updateRoleAction(roomID, roleAction) {
 	})
 }
 app.get('/test', (req, res) => {
-	randomRole('20509498');
-	res.status(200).json({success: true});
+	startGame('20509498');
+	res.status(200).json({ success: true });
 })
 app.get('/play/:roomID/do', (req, res) => {
 	const roleAction = req.query.action;
 	const roomID = req.params.roomID;
 	updateRoleAction(roomID, JSON.parse(roleAction));
-	res.status(200).json({success: true});
+	res.status(200).json({ success: true });
 })
 
 app.post('/reg', (req, res) => {
@@ -183,27 +186,27 @@ app.get('/room', (req, res) => {
 		res.status(200).json(room)
 	}).catch(err => console.error(err))
 })
-app.get('/play/init', (req, res) => {
-	const roomID = req.query.room_id;
-	chatkit.getRoom({
-		roomId: "20509498",
-	}).then(room => {
-		chatkit.getUsersById({
-			userIds: room.member_user_ids,
-		}).then(users => {
-			var resRoom = {
-				id: room.id,
-				name: room.name,
-				status: 'waiting',
-				players: users
-			}
-			res.status(200).json(resRoom)
-		}).catch(err => console.error(err))
-	}).catch(err => console.error(err))
-})
-app.get('/play', (req, res) => {
+// app.get('/play/:roomID/init', (req, res) => {
+// 	const roomID = req.params.room_id;
+// 	chatkit.getRoom({
+// 		roomId: "20509498",
+// 	}).then(room => {
+// 		chatkit.getUsersById({
+// 			userIds: room.member_user_ids,
+// 		}).then(users => {
+// 			var resRoom = {
+// 				id: room.id,
+// 				name: room.name,
+// 				status: 'waiting',
+// 				players: users
+// 			}
+// 			res.status(200).json(resRoom)
+// 		}).catch(err => console.error(err))
+// 	}).catch(err => console.error(err))
+// })
+app.get('/play/:roomID/:action', (req, res) => {
 	const userID = req.query.user_id;
-	const action = req.query.action;
+	const action = req.params.action;
 	const value = req.query.value === 'true' ? true : false;
 	if (action == 'ready') {
 		chatkit.updateUser({
@@ -249,5 +252,5 @@ app.get('/room/:id/status', (req, res) => {
 		client.close();
 	});
 })
-app.listen(process.env.PORT || 3001)
+app.listen(3001)
 console.log('MA SÓI BOT Server đang chạy tại cổng 3001...')
