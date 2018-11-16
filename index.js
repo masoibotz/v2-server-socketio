@@ -253,5 +253,5 @@ app.get('/room/:id/status', (req, res) => {
 		client.close();
 	});
 })
-app.listen(3001)
-console.log('MA SÓI BOT Server đang chạy tại cổng 3001...')
+app.listen(env.process.PORT || 3001)
+console.log(`MA SÓI BOT Server đang chạy tại cổng ${env.process.PORT || 3001}...`)
