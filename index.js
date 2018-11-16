@@ -136,8 +136,9 @@ function updateRoleAction(roomID, roleAction) {
 		});
 	})
 }
-app.get('/test', (req, res) => {
-	startGame('20509498');
+app.get('play/:roomID/start', (req, res) => {
+	const roomID = req.params.roomID;
+	startGame(roomID);
 	res.status(200).json({ success: true });
 })
 app.get('/play/:roomID/do', (req, res) => {
