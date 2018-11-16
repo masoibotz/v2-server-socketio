@@ -52,7 +52,6 @@ function sendAction(roomID, actionName, data = {}) {
 	}))
 }
 function getUserFromChatRoom(roomID) {
-	console.log("call");
 	return new Promise((resolve, reject) => {
 		chatkit.getRoom({
 			roomId: roomID,
@@ -97,7 +96,7 @@ function randomRole(roomID) {
 			}, { returnOriginal: false }, function (err, res) {
 				if (err) throw err;
 				console.log(`Phòng ${roomID}: Chọn ngẫu nhiên nhân vật...`);
-				sendAction(roomID, 'goStage', res);
+				sendAction(roomID, 'goStage', res.value);
 			});
 		})
 	}).catch(err => console.log(err))
@@ -110,7 +109,7 @@ function goStage(roomID, stage) {
 		}, { returnOriginal: false }, function (err, res) {
 			if (err) throw err;
 			console.log(`Phòng ${roomID}: Stage ${stage}`);
-			sendAction(roomID, 'goStage', res);
+			sendAction(roomID, 'goStage', res.value);
 
 			//next stage
 			const nextStage = nextStageArr[stage];
@@ -123,6 +122,7 @@ function goStage(roomID, stage) {
 	})
 }
 function startGame(roomID) {
+	console.log(`Phòng ${roomID}: Bắt đầu trò chơi...`);
 	randomRole(roomID);
 	goStage(roomID, 'night');
 }
