@@ -187,52 +187,25 @@ app.get('/room', (req, res) => {
 		res.status(200).json(room)
 	}).catch(err => console.error(err))
 })
-// app.get('/play/:roomID/init', (req, res) => {
-// 	const roomID = req.params.room_id;
-// 	chatkit.getRoom({
-// 		roomId: "20509498",
-// 	}).then(room => {
-// 		chatkit.getUsersById({
-// 			userIds: room.member_user_ids,
-// 		}).then(users => {
-// 			var resRoom = {
-// 				id: room.id,
-// 				name: room.name,
-// 				status: 'waiting',
-// 				players: users
-// 			}
-// 			res.status(200).json(resRoom)
-// 		}).catch(err => console.error(err))
-// 	}).catch(err => console.error(err))
-// })
-app.get('/play/:roomID/:action', (req, res) => {
+app.get('/play/:roomID/ready', (req, res) => {
 	const userID = req.query.user_id;
-	const action = req.params.action;
 	const value = req.query.value === 'true' ? true : false;
-	if (action == 'ready') {
-		chatkit.updateUser({
-			id: userID,
-			customData: {
-				ready: value,
-			},
-		}).then(() => {
-			console.log(`User ${userID} ready: ${value}`);
-			res.status(200).json({
-				success: true,
-			})
-		}).catch((err) => {
-			console.log(err);
-			res.status(200).json({
-				success: false,
-			})
-		});
-	} else if (action == 'start') {
-		// random role ();
-		sendAction('20509498', 'loadRole');
+	chatkit.updateUser({
+		id: userID,
+		customData: {
+			ready: value,
+		},
+	}).then(() => {
+		console.log(`User ${userID} ready: ${value}`);
 		res.status(200).json({
 			success: true,
 		})
-	}
+	}).catch((err) => {
+		console.log(err);
+		res.status(200).json({
+			success: false,
+		})
+	});
 })
 app.get('/loadRole', (req, res) => {
 	const userID = req.query.user_id;
