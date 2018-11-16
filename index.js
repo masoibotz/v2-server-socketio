@@ -136,7 +136,7 @@ function updateRoleAction(roomID, roleAction) {
 		});
 	})
 }
-app.get('play/:roomID/start', (req, res) => {
+app.get('/play/:roomID/start', (req, res) => {
 	const roomID = req.params.roomID;
 	startGame(roomID);
 	res.status(200).json({ success: true });
