@@ -207,6 +207,24 @@ app.get('/play/:roomID/ready', (req, res) => {
 		})
 	});
 })
+app.get('/play/:roomID/getUser', (req, res) => {
+	const roomID = req.params.room_id;
+	chatkit.getRoom({
+		roomId: "20509498",
+	}).then(room => {
+		chatkit.getUsersById({
+			userIds: room.member_user_ids,
+		}).then(users => {
+			var resRoom = {
+				id: room.id,
+				name: room.name,
+				status: 'waiting',
+				players: users
+			}
+			res.status(200).json(resRoom)
+		}).catch(err => console.error(err))
+	}).catch(err => console.error(err))
+})
 app.get('/loadRole', (req, res) => {
 	const userID = req.query.user_id;
 	res.status(200).json({
@@ -214,11 +232,11 @@ app.get('/loadRole', (req, res) => {
 		role: -1 //wolf
 	});
 })
-app.get('/room/:id/status', (req, res) => {
-	const roomID = req.params.id;
+app.get('/room/:roomID/status', (req, res) => {
+	const roomID = req.params.roomID;
 	MongoClient.connect('mongodb+srv://root:root@cluster0-7wmps.mongodb.net/test?retryWrites=true', { useNewUrlParser: true }, function (err, client) {
 		const collection = client.db("masoi").collection("room");
-		collection.findOne({ roomChatID: "20509498" }, function (err, result) {
+		collection.findOne({ roomChatID: roomID }, function (err, result) {
 			if (err) throw err;
 			res.status(200).json(result)
 			console.log(result);
