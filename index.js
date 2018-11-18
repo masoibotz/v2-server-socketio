@@ -4,12 +4,13 @@ const cors = require('cors')
 // const Chatkit = require('@pusher/chatkit-server')
 const MongoClient = require('mongodb').MongoClient;
 // const assert = require('assert');
-var schedule = require('node-schedule')
+// var schedule = require('node-schedule')
 
 const ChatServer = require('./chatkit');
 const chatServer = new ChatServer();
 const DBServer = require('./mongodb');
 const dbServer = new DBServer()
+const { randomRole, goStage, endGame } = require('./MaSoi');
 
 const app = express()
 
@@ -17,66 +18,17 @@ app.use(bodyParser.urlencoded({ extended: false }))
 app.use(bodyParser.json())
 app.use(cors())
 
-const stageTimeoutArr = {
-	"night": 10 * 1000,
-	"discuss": 1 * 60 * 1000,
-	"voteyesno": 10 * 1000
-}
-const nextStageArr = {
-	"night": "discuss",
-	"discuss": "voteyesno",
-	"voteyesno": "night"
-}
-
-function randomRole(roomID) {
-	chatServer.getUserFromChatRoom(roomID).then(users => {
-		var readyUser = users.filter(u => {
-			return u.custom_data.ready;
-		})
-		var setup = { "0": [], "-1": [] }
-		readyUser.forEach(u => {
-			let roleID = Math.random() <= 0.5 ? -1 : 0;
-			setup[roleID] = [...setup[roleID], u.id];
-		})
-		dbServer.updatePlayRoom(roomID, { status: 'ingame', dayStage: 'night', stageTimeout: new Date(Date.now() + stageTimeoutArr['night']).toISOString(), setup: setup }, (res) => {
-			console.log(`Phòng ${roomID}: Chọn ngẫu nhiên nhân vật...`);
-			chatServer.sendAction(roomID, 'loadRole', res.value);
-		})
-	}).catch(err => console.log(err))
-}
-function goStage(roomID, stage) {
-	let endTimer = new Date(Date.now() + stageTimeoutArr[stage]);
-	dbServer.updatePlayRoom(roomID, { dayStage: stage, stageTimeout: endTimer.toISOString() }, (res) => {
-		console.log(`Phòng ${roomID}: Stage ${stage}`);
-		chatServer.sendAction(roomID, `goStage${stage}`, res.value);
-
-		//next stage
-		const nextStage = nextStageArr[stage];
-		if (res.status != 'ending') {
-			schedule.scheduleJob(endTimer, () => {
-				goStage(roomID, nextStage);
-			})
-		};
-	})
-}
-function startGame(roomID) {
-	console.log(`Phòng ${roomID}: Bắt đầu trò chơi...`);
-	randomRole(roomID);
-	goStage(roomID, 'night');
-}
-function endGame(roomID) {
-	console.log(`Phòng ${roomID}: ENDGAME BETA...`);
-	schedule.cancel();
-}
-
-app.get('/end/:roomID', (req, res) => {
+app.get('/play/:roomID/end', (req, res) => {
 	const roomID = req.params.roomID;
-	endGame(roomID);
+	console.log(`Phòng ${roomID}: ENDGAME BETA...`);
+	endGame();
 	res.status(200).json({ success: true });
 })
 app.get('/play/:roomID/start', (req, res) => {
 	const roomID = req.params.roomID;
-	startGame(roomID);
+	console.log(`Phòng ${roomID}: Bắt đầu trò chơi...`);
+	randomRole(chatServer, dbServer, roomID);
+	goStage(chatServer, dbServer, roomID, 'night');
 	res.status(200).json({ success: true });
 })
 app.get('/play/:roomID/do', (req, res) => {
