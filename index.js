@@ -112,13 +112,7 @@ app.get('/play/:roomID/getUser', (req, res) => {
 	const roomID = req.params.roomID;
 	console.log(`GET: /play/${roomID}/getUser`);
 	chatServer.getUserFromChatRoom(roomID).then((users) => {
-		var resRoom = {
-			id: room.id,
-			name: room.name,
-			status: 'waiting',
-			players: users
-		}
-		res.status(200).json(resRoom);
+		res.status(200).json(users);
 	})
 })
 app.get('/room/:roomID/status', (req, res) => {
