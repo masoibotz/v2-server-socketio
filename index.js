@@ -40,7 +40,7 @@ function randomRole(roomID) {
 		})
 		dbServer.updatePlayRoom(roomID, { status: 'ingame', dayStage: 'night', stageTimeout: new Date(Date.now() + stageTimeoutArr['night']).toISOString(), setup: setup }, (res) => {
 			console.log(`Phòng ${roomID}: Chọn ngẫu nhiên nhân vật...`);
-			sendAction(roomID, 'loadRole', res.value);
+			chatServer.sendAction(roomID, 'loadRole', res.value);
 		})
 	}).catch(err => console.log(err))
 }
@@ -48,7 +48,7 @@ function goStage(roomID, stage) {
 	let endTimer = new Date(Date.now() + stageTimeoutArr[stage]);
 	dbServer.updatePlayRoom(roomID, { dayStage: stage, stageTimeout: endTimer.toISOString() }, (res) => {
 		console.log(`Phòng ${roomID}: Stage ${stage}`);
-		sendAction(roomID, `goStage${stage}`, res.value);
+		chatServer.sendAction(roomID, `goStage${stage}`, res.value);
 
 		//next stage
 		const nextStage = nextStageArr[stage];
