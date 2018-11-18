@@ -10,7 +10,7 @@ const ChatServer = require('./chatkit');
 const chatServer = new ChatServer();
 const DBServer = require('./mongodb');
 const dbServer = new DBServer()
-const { randomRole, goStage, endGame } = require('./MaSoi');
+const { randomRole, goStage, endGame, findDeathUser } = require('./MaSoi');
 
 const app = express()
 
@@ -20,8 +20,8 @@ app.use(cors())
 
 app.get('/play/:roomID/end', (req, res) => {
 	const roomID = req.params.roomID;
-	console.log(`Phòng ${roomID}: ENDGAME BETA...`);
-	endGame();
+	console.log(`Phòng ${roomID}: ENDGAME BETA: stopping game...`);
+	endGame(roomID);
 	res.status(200).json({ success: true });
 })
 app.get('/play/:roomID/start', (req, res) => {
@@ -77,5 +77,8 @@ app.get('/room/:roomID/status', (req, res) => {
 		});
 	})
 })
+app.get('/test', (req, res) => {
+	res.status(200).json(findDeathUser());
+});
 app.listen(process.env.PORT || 3001)
 console.log(`MA SÓI BOT Server đang chạy tại cổng ${process.env.PORT || 3001}...`)
