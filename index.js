@@ -34,7 +34,7 @@ app.get('/play/:roomID/start', (req, res) => {
 app.get('/play/:roomID/do', (req, res) => {
 	const roleAction = req.query.action;
 	const roomID = req.params.roomID;
-	updateRoleAction(roomID, JSON.parse(roleAction));
+	dbServer.updatePlayRoom(roomID, JSON.parse(roleAction));
 	res.status(200).json({ success: true });
 })
 
