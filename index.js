@@ -1,16 +1,16 @@
 const express = require('express')
 const bodyParser = require('body-parser')
 const cors = require('cors')
-const Chatkit = require('@pusher/chatkit-server')
+// const Chatkit = require('@pusher/chatkit-server')
 const MongoClient = require('mongodb').MongoClient;
-const assert = require('assert');
+// const assert = require('assert');
 var schedule = require('node-schedule')
 
+const ChatServer = require('./chatkit');
+const chatServer = new ChatServer();
+const DBServer = require('./mongodb');
+const dbServer = new DBServer()
 
-const chatkit = new Chatkit.default({
-	instanceLocator: 'v1:us1:754dee8b-d6c4-41b4-a6d6-7105da589788',
-	key: '04873650-fd91-476c-9e94-f821f7727fe7:/BcAzTp7GDueJVCKaCc+ZbuY6O340bjmk9Ux8dKryns='
-})
 const app = express()
 
 app.use(bodyParser.urlencoded({ extended: false }))
@@ -28,60 +28,8 @@ const nextStageArr = {
 	"voteyesno": "night"
 }
 
-function roomDB(callback) {
-	MongoClient.connect('mongodb+srv://root:root@cluster0-7wmps.mongodb.net/test?retryWrites=true', { useNewUrlParser: true }, function (err, client) {
-		const collection = client.db("masoi").collection("room");
-		callback(collection);
-		client.close();
-	});
-}
-function sendMessage(roomID, text) {
-	chatkit.sendMessage({
-		userId: 'botquantro',
-		roomId: roomID,
-		text: text,
-	})
-		.then(res => console.log('bot send'))
-		.catch(err => console.error(err))
-}
-function sendAction(roomID, actionName, data = {}) {
-	sendMessage(roomID, JSON.stringify({
-		action: actionName,
-		text: `CMD:${actionName}`,
-		data: data
-	}))
-}
-function getUserFromChatRoom(roomID) {
-	return new Promise((resolve, reject) => {
-		chatkit.getRoom({
-			roomId: roomID,
-		}).then(room => {
-			chatkit.getUsersById({
-				userIds: room.member_user_ids,
-			}).then(users => {
-				resolve(users);
-			}).catch(err => {
-				console.error(err);
-				reject(err);
-			})
-		}).catch(err => {
-			console.error(err);
-			reject(err);
-		})
-	})
-}
-function getRoomState(roomID) {
-	return new Promise((resolve, reject) => {
-		roomDB(collection => {
-			collection.findOne({ roomChatID: roomID }, function (err, result) {
-				if (err) throw err;
-				resolve(result);
-			});
-		})
-	})
-}
 function randomRole(roomID) {
-	getUserFromChatRoom(roomID).then(users => {
+	chatServer.getUserFromChatRoom(roomID).then(users => {
 		var readyUser = users.filter(u => {
 			return u.custom_data.ready;
 		})
@@ -90,35 +38,25 @@ function randomRole(roomID) {
 			let roleID = Math.random() <= 0.5 ? -1 : 0;
 			setup[roleID] = [...setup[roleID], u.id];
 		})
-		roomDB(collection => {
-			collection.findOneAndUpdate({ roomChatID: roomID }, {
-				$set: { status: 'ingame', dayStage: 'night', stageTimeout: new Date(Date.now() + stageTimeoutArr['night']).toISOString(), setup: setup }
-			}, { returnOriginal: false }, function (err, res) {
-				if (err) throw err;
-				console.log(`Phòng ${roomID}: Chọn ngẫu nhiên nhân vật...`);
-				sendAction(roomID, 'loadRole', res.value);
-			});
+		dbServer.updatePlayRoom(roomID, { status: 'ingame', dayStage: 'night', stageTimeout: new Date(Date.now() + stageTimeoutArr['night']).toISOString(), setup: setup }, (res) => {
+			console.log(`Phòng ${roomID}: Chọn ngẫu nhiên nhân vật...`);
+			sendAction(roomID, 'loadRole', res.value);
 		})
 	}).catch(err => console.log(err))
 }
 function goStage(roomID, stage) {
 	let endTimer = new Date(Date.now() + stageTimeoutArr[stage]);
-	roomDB(collection => {
-		collection.findOneAndUpdate({ roomChatID: roomID }, {
-			$set: { dayStage: stage, stageTimeout: endTimer.toISOString() }
-		}, { returnOriginal: false }, function (err, res) {
-			if (err) throw err;
-			console.log(`Phòng ${roomID}: Stage ${stage}`);
-			sendAction(roomID, `goStage${stage}`, res.value);
+	dbServer.updatePlayRoom(roomID, { dayStage: stage, stageTimeout: endTimer.toISOString() }, (res) => {
+		console.log(`Phòng ${roomID}: Stage ${stage}`);
+		sendAction(roomID, `goStage${stage}`, res.value);
 
-			//next stage
-			const nextStage = nextStageArr[stage];
-			if (res.status != 'ending') {
-				schedule.scheduleJob(endTimer, () => {
-					goStage(roomID, nextStage);
-				})
-			};
-		});
+		//next stage
+		const nextStage = nextStageArr[stage];
+		if (res.status != 'ending') {
+			schedule.scheduleJob(endTimer, () => {
+				goStage(roomID, nextStage);
+			})
+		};
 	})
 }
 function startGame(roomID) {
@@ -130,16 +68,7 @@ function endGame(roomID) {
 	console.log(`Phòng ${roomID}: ENDGAME BETA...`);
 	schedule.cancel();
 }
-function updateRoleAction(roomID, roleAction) {
-	roomDB(collection => {
-		collection.updateOne({ roomChatID: roomID }, {
-			$set: roleAction
-		}, function (err, res) {
-			if (err) throw err;
-			console.log(`Phòng ${roomID}: Cập nhật `, roleAction);
-		});
-	})
-}
+
 app.get('/end/:roomID', (req, res) => {
 	const roomID = req.params.roomID;
 	endGame(roomID);
@@ -157,40 +86,15 @@ app.get('/play/:roomID/do', (req, res) => {
 	res.status(200).json({ success: true });
 })
 
-app.post('/reg', (req, res) => {
+app.post('/reg', async (req, res) => {
 	const { id, name } = req.body;
 	console.log(`[+] REG for user: ${req.id}`);
-	chatkit.createUser({
-		id: id,
-		name: name,
-		customData: { ready: false },
-	}).then(() => {
-		console.log(`New User @${id}: ${name}`);
-		res.status(200).json({
-			success: true,
-			id: id,
-			name: name
-		});
-	}).catch((err) => {
-		if (err.error === 'services/chatkit/user_already_exists') {
-			res.status(200).json({
-				success: false,
-				err: "Mã bí mật trùng lặp!"
-			})
-		} else if (err.error === 'services/chatkit/unprocessable_entity/validation_failed') {
-			res.status(200).json({
-				success: false,
-				err: "Vui lòng nhập đủ tên đăng nhập và mã bí mật!"
-			})
-		}
-		console.log(err.error);
-	});
+	var ret = await chatServer.regNewUser(id, name);
+	res.status(200).json(ret);
 })
-app.post('/auth', (req, res) => {
+app.post('/auth', async (req, res) => {
 	console.log(`[+] LOGIN for user: ${req.query.user_id}`);
-	const authData = chatkit.authenticate({
-		userId: req.query.user_id
-	});
+	const authData = await chatServer.login(req.query.user_id);
 	res.status(authData.status).send(authData.body);
 })
 app.get('/room', (req, res) => {
@@ -198,25 +102,11 @@ app.get('/room', (req, res) => {
 		res.status(200).json(room)
 	}).catch(err => console.error(err))
 })
-app.get('/play/:roomID/ready', (req, res) => {
+app.get('/play/:roomID/ready', async (req, res) => {
 	const userID = req.query.user_id;
 	const value = req.query.value === 'true' ? true : false;
-	chatkit.updateUser({
-		id: userID,
-		customData: {
-			ready: value,
-		},
-	}).then(() => {
-		console.log(`User ${userID} ready: ${value}`);
-		res.status(200).json({
-			success: true,
-		})
-	}).catch((err) => {
-		console.log(err);
-		res.status(200).json({
-			success: false,
-		})
-	});
+	var ret = await chatServer.ready(userID, value);
+	res.status(200).json(ret);
 })
 app.get('/play/:roomID/getUser', (req, res) => {
 	const roomID = req.params.roomID;
@@ -237,24 +127,15 @@ app.get('/play/:roomID/getUser', (req, res) => {
 		}).catch(err => console.error(err))
 	}).catch(err => console.error(err))
 })
-app.get('/loadRole', (req, res) => {
-	const userID = req.query.user_id;
-	res.status(200).json({
-		success: true,
-		role: -1 //wolf
-	});
-})
 app.get('/room/:roomID/status', (req, res) => {
 	const roomID = req.params.roomID;
 	console.log(`GET: /room/${roomID}/status`);
-	MongoClient.connect('mongodb+srv://root:root@cluster0-7wmps.mongodb.net/test?retryWrites=true', { useNewUrlParser: true }, function (err, client) {
-		const collection = client.db("masoi").collection("room");
+	dbServer.getPlayRoom((collection)=>{
 		collection.findOne({ roomChatID: roomID }, function (err, result) {
 			if (err) throw err;
 			res.status(200).json(result)
 		});
-		client.close();
-	});
+	})
 })
 app.listen(process.env.PORT || 3001)
 console.log(`MA SÓI BOT Server đang chạy tại cổng ${process.env.PORT || 3001}...`)
