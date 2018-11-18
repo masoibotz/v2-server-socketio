@@ -111,26 +111,20 @@ app.get('/play/:roomID/ready', async (req, res) => {
 app.get('/play/:roomID/getUser', (req, res) => {
 	const roomID = req.params.roomID;
 	console.log(`GET: /play/${roomID}/getUser`);
-	chatkit.getRoom({
-		roomId: "20509498",
-	}).then(room => {
-		chatkit.getUsersById({
-			userIds: room.member_user_ids,
-		}).then(users => {
-			var resRoom = {
-				id: room.id,
-				name: room.name,
-				status: 'waiting',
-				players: users
-			}
-			res.status(200).json(resRoom)
-		}).catch(err => console.error(err))
-	}).catch(err => console.error(err))
+	chatServer.getUserFromChatRoom(roomID).then((users) => {
+		var resRoom = {
+			id: room.id,
+			name: room.name,
+			status: 'waiting',
+			players: users
+		}
+		res.status(200).json(resRoom);
+	})
 })
 app.get('/room/:roomID/status', (req, res) => {
 	const roomID = req.params.roomID;
 	console.log(`GET: /room/${roomID}/status`);
-	dbServer.getPlayRoom((collection)=>{
+	dbServer.getPlayRoom((collection) => {
 		collection.findOne({ roomChatID: roomID }, function (err, result) {
 			if (err) throw err;
 			res.status(200).json(result)
