@@ -54,7 +54,7 @@ module.exports = class ChatServer {
     sendAction(roomID, actionName, data = {}) {
         this.sendMessage(roomID, JSON.stringify({
             action: actionName,
-            text: `CMD:${actionName}`,
+            text: `${actionName}`,
             data: data
         }))
     }

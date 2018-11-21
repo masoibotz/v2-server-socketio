@@ -17,15 +17,32 @@ module.exports = class DBServer {
             })
         })
     }
-    updatePlayRoom(roomID, updateData, callback = ()=>{}) {
-        this.getPlayRoom(collection => {
-            collection.findOneAndUpdate({ roomChatID: roomID }, {
-				$set: updateData
-			}, { returnOriginal: false }, function (err, res) {
-				if (err) throw err;
-				console.log(`Phòng ${roomID}: Cập nhật `, updateData);
-				callback(res);
-			});
+    updatePlayRoom(roomID, updateData, callback = () => { }) {
+        return new Promise((resolve, reject) => {
+            this.getPlayRoom(collection => {
+                collection.findOneAndUpdate({ roomChatID: roomID }, {
+                    $set: updateData,
+                }, { returnOriginal: false }, function (err, res) {
+                    if (err) throw err;
+                    console.log(`Phòng ${roomID}: Cập nhật `, updateData);
+                    callback(res);
+                    resolve(res);
+                });
+            })
+        })
+    }
+    pushPlayRoom(roomID, pushData, callback = () => { }) {
+        return new Promise((resolve, reject) => {
+            this.getPlayRoom(collection => {
+                collection.findOneAndUpdate({ roomChatID: roomID }, {
+                    $push: pushData,
+                }, { returnOriginal: false }, function (err, res) {
+                    if (err) throw err;
+                    console.log(`Phòng ${roomID}: Cập nhật mảng `, pushData);
+                    callback(res);
+                    resolve(res);
+                });
+            })
         })
     }
 }
