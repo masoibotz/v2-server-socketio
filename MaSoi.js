@@ -44,7 +44,7 @@ async function randomRole(chatServer, dbServer, roomID) {
         var villagersID = [];
         var wolfsID = [];
         var cupidsID = [];
-        let preSet = [2, 7, -1];
+        let preSet = [2, 6, -1];
         readyUser.forEach((u, i) => {
             let roleID = preSet[i];
             if (roleID === -1) {
@@ -118,7 +118,7 @@ async function goStage(chatServer, dbServer, roomID, stage) {
 
     switch (stage) {
         case 'night': //after_cupid
-            if (playRoom.cupidsID.length == 2) { // đã ghép đôi
+            if (playRoom.setup[7].length != 0 && playRoom.cupidsID.length == 2) { // đã ghép đôi
                 updateData = {
                     ...updateData, ...{
                         "setup.4": [...playRoom.setup[4], playRoom.setup[7][0]],
@@ -136,8 +136,19 @@ async function goStage(chatServer, dbServer, roomID, stage) {
             playRoom.roleAction.victimID = mostVotedUser;
             // reset
             updateData = { ...updateData, ...{ voteList: {} } }
+            // kiểm tra có sói nguyền không nếu không thì bỏ qua
+            if (playRoom.setup[-3].length == 0) {
+                await dbServer.updatePlayRoom(roomID, updateData);
+                goStage(chatServer, dbServer, roomID, nextStageArr[stage]);
+                return;
+            }
             break;
         case 'witch': //after_superwolf
+            // kiểm tra có witch không nếu không thì bỏ qua
+            if (playRoom.setup[5].length == 0) {
+                goStage(chatServer, dbServer, roomID, nextStageArr[stage]);
+                return;
+            }
             break;
         case 'discuss': //after_witch
             var deathArr = await KillDeathUser(chatServer, dbServer, playRoom);
@@ -166,6 +177,13 @@ async function goStage(chatServer, dbServer, roomID, stage) {
             // if (gameIsEnd(playRoom)) {
             //     endGame(playRoom.roomChatID);
             // }
+
+            // kiểm tra có cupid không nếu không thì bỏ qua
+            if (playRoom.setup[7].length == 0) {
+                await dbServer.updatePlayRoom(roomID, updateData);
+                goStage(chatServer, dbServer, roomID, nextStageArr[stage]);
+                return;
+            }
             break;
     }
     await dbServer.updatePlayRoom(roomID, updateData, (res) => {
