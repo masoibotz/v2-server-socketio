@@ -1,10 +1,6 @@
 const express = require('express')
 const bodyParser = require('body-parser')
 const cors = require('cors')
-// const Chatkit = require('@pusher/chatkit-server')
-const MongoClient = require('mongodb').MongoClient;
-// const assert = require('assert');
-// var schedule = require('node-schedule')
 
 const ChatServer = require('./chatkit');
 const chatServer = new ChatServer();
@@ -18,17 +14,25 @@ app.use(bodyParser.urlencoded({ extended: false }))
 app.use(bodyParser.json())
 app.use(cors())
 
+var roomIngame = [];
+
 app.get('/play/:roomID/end', (req, res) => {
 	const roomID = req.params.roomID;
 	console.log(`Phòng ${roomID}: ENDGAME BETA: stopping game...`);
-	endGame(roomID);
+	roomIngame[roomID] = false;
+	endGame(roomID, dbServer, chatServer);
 	res.status(200).json({ success: true });
 })
 app.get('/play/:roomID/start', async (req, res) => {
 	const roomID = req.params.roomID;
+	const preSetupArr = JSON.parse(req.query.setup);
+	if (roomIngame[roomID]) {
+		res.status(200).json({ success: false, message: 'Game already started!' });
+		return;
+	}
 	console.log(`Phòng ${roomID}: Bắt đầu trò chơi...`);
-	await randomRole(chatServer, dbServer, roomID);
-	await goStage(chatServer, dbServer, roomID, 'cupid');
+	roomIngame[roomID] = true;
+	await goStage(chatServer, dbServer, roomID, 'readyToGame', preSetupArr);
 	res.status(200).json({ success: true });
 })
 app.get('/play/:roomID/do', (req, res) => {
