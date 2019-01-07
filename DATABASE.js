@@ -5,13 +5,13 @@ var db = {
     "logs": [
         "Tóm tắt game"
     ],
-    "state": { //update every_stage
+    "state": {
         "status": "waiting",
         "day": 0,
-        "dayStage": "night",
-        "stageEnd": "2019-01-03T17:04:08.803Z",
+        "dayStage": "endGame",
+        "stageEnd": "2019-01-03T17:04:08.803Z"
     },
-    "players": { //update after_night"
+    "players": {
         "ready": {},
         "names": {
             "duy": "Duy1",
@@ -33,7 +33,7 @@ var db = {
         "coupleID": [
         ]
     },
-    "setup": { //update after_night
+    "setup": {
         "1": [],
         "2": [
             "duy"
@@ -52,20 +52,20 @@ var db = {
             "ha"
         ]
     },
-    "roleInfo": { //after each vote (twice)
+    "roleInfo": {
         "victimID": "",
         "lastDeath": [],
         "deathList": [],
-        "hasCouple": false, //update after_night_and_day
-        "angelWin": false, //update after_night_and_day_1
-        "witchSaveRemain": true, //update after_night
-        "witchKillRemain": true, //update after_night
-        "superWolfVictimID": "", //update after_night / once
-        "oldManLive": 2, //update after_night
-        "lastSaveID": "", //update after_night
-        "lastFireID": "" //update after_night
+        "hasCouple": false,
+        "angelWin": false,
+        "witchSaveRemain": true,
+        "witchKillRemain": true,
+        "superWolfVictimID": "",
+        "oldManLive": 2,
+        "lastSaveID": "",
+        "lastFireID": ""
     },
-    "roleTarget": { //update after_night
+    "roleTarget": {
         "voteList": {},
         "coupleList": [],
         "saveID": "",

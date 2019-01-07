@@ -43,7 +43,6 @@ const roleName = {
     "9": '🧚‍THIÊN SỨ', //done
 }
 const defaultGameData = {
-    logs: ["Tóm tắt game"],
     "state.day": 0,
     "players.coupleID": [],
 
@@ -69,34 +68,39 @@ const defaultGameData = {
     "roleTarget.fireToKill": false
 }
 var roomSchedule = [];
-function randomRole(playRoom, roomID, preSetup) {
-    console.log(`Phòng ${roomID}: Đã SETUP XONG!!!`);
-    var readyUser = Object.keys(playRoom.players.ready);
-    var setup = { "-3": [], "-2": [], "-1": [], "1": [], "2": [], "3": [], "4": [], "5": [], "6": [], "7": [], "8": [], "9": [] };
-    var allID = [];
-    var villagersID = [];
-    var wolfsID = [];
-    var playersName = {};
-    let preSet = preSetup ? preSetup : [-1, -1, -1, -1];
-    readyUser.forEach((u, i) => {
-        let roleID = preSet[i];
-        if (roleID === -1 || roleID === -3) {
-            wolfsID = [...wolfsID, u.id];
-        } else {
-            villagersID = [...villagersID, u.id];
-        }
-        allID = [...allID, u.id];
-        playersName[u.id] = u.name;
-        setup[roleID] = [...setup[roleID], u.id];
-    })
-    return ({
-        setup: setup,
-        "players.names": playersName,
-        "players.allID": allID,
-        "players.villagersID": villagersID,
-        "players.wolfsID": wolfsID,
+function randomRole(chatServer, playRoom, roomID, preSetup) {
+    return chatServer.getUserFromChatRoom(roomID).then(users => {
+        return users.filter(u => {
+            return playRoom.players.ready[u.id];
+        });
+    }).then(readyUser => {
+        console.log(`Phòng ${roomID}: Đã SETUP XONG cho ${readyUser.length} NGƯỜI`);
+
+        var setup = { "-3": [], "-2": [], "-1": [], "1": [], "2": [], "3": [], "4": [], "5": [], "6": [], "7": [], "8": [], "9": [] };
+        var allID = [];
+        var villagersID = [];
+        var wolfsID = [];
+        var playersName = {};
+        let preSet = preSetup ? preSetup : [-1, -1, -1, -1];
+        readyUser.forEach((u, i) => {
+            let roleID = preSet[i];
+            if (roleID === -1 || roleID === -3) {
+                wolfsID = [...wolfsID, u.id];
+            } else {
+                villagersID = [...villagersID, u.id];
+            }
+            allID = [...allID, u.id];
+            playersName[u.id] = u.name;
+            setup[roleID] = [...setup[roleID], u.id];
+        })
+        return ({
+            setup: setup,
+            "players.names": playersName,
+            "players.allID": allID,
+            "players.villagersID": villagersID,
+            "players.wolfsID": wolfsID,
+        });
     });
-    // chatServer.sendAction(roomID, 'loadRole', res.value);
 }
 // endGame missing......................................
 async function goStage(chatServer, dbServer, roomID, stage, preSetup = []) {
@@ -105,7 +109,7 @@ async function goStage(chatServer, dbServer, roomID, stage, preSetup = []) {
     var updateData = { "state.dayStage": stage, "state.stageEnd": endTimer.toISOString() };
 
     var playRoom = {};
-    await dbServer.getPlayRoomState(roomID).then(data => {
+    await dbServer.getPlayRoom(roomID).then(data => {
         playRoom = data;
     })
 
@@ -113,12 +117,14 @@ async function goStage(chatServer, dbServer, roomID, stage, preSetup = []) {
         case 'readyToGame':
             roomSchedule[roomID] = null;
             //random role and reset room data
-            let randomData = randomRole(playRoom, roomID, preSetup);
-            updateData = {
-                ...updateData, ...randomData, ...defaultGameData, ...{
-                    "state.status": "ingame"
-                }
-            };
+            await randomRole(chatServer, playRoom, roomID, preSetup).then(randomData => {
+                updateData = {
+                    ...updateData, ...randomData, ...defaultGameData, ...{
+                        logs: [],
+                        "state.status": "ingame"
+                    }
+                };
+            });
             break;
         case 'cupid': //after_voteYesNoResult or after_readyToGame: Start NEW gameDAY
             // Start NEW gameDAY
@@ -127,9 +133,6 @@ async function goStage(chatServer, dbServer, roomID, stage, preSetup = []) {
             if (playRoom.state.day + 1 == 2 && playRoom.setup[9].length > 0) {
                 updateData = { ...updateData, ...{ "setup.9": [], "setup.4": [...playRoom.setup[4], ...playRoom.setup[9]] } }
             }
-            // if (gameIsEnd(playRoom)) {
-            //     goStage(chatServer, dbServer, roomID, "endGame");
-            // }
             // kiểm tra có cupid không nếu không thì bỏ qua
             if (playRoom.setup[7].length == 0) {
                 console.log(`<<<<<<<<<<<<<<<< Phòng ${roomID}: goStage ${stage} <<<<<<<<<<<<<<<<`);
@@ -139,7 +142,7 @@ async function goStage(chatServer, dbServer, roomID, stage, preSetup = []) {
             }
             break;
         case 'night': //after_cupid
-            if (playRoom.state.day === 1 && playRoom.setup[7].length != 0 && playRoom.roleTarget.coupleList.length == 2) { // đã ghép đôi
+            if (playRoom.setup[7].length != 0 && playRoom.roleTarget.coupleList.length == 2) { // đã ghép đôi
                 updateData = {
                     ...updateData, ...{
                         "players.coupleID": playRoom.roleTarget.coupleList,
@@ -203,9 +206,6 @@ async function goStage(chatServer, dbServer, roomID, stage, preSetup = []) {
             }
             var deathArr = await KillVictim(chatServer, dbServer, playRoom, true);
             updateData = { ...updateData, ...{ "roleInfo.lastDeath": deathArr } };
-            // if (gameIsEnd(playRoom)) {
-            //     goStage(chatServer, dbServer, roomID, "endGame");
-            // }
             break;
         case 'voteResult':// after_vote
             var mostVotedUser = mostVoted(playRoom);
@@ -235,10 +235,13 @@ async function goStage(chatServer, dbServer, roomID, stage, preSetup = []) {
                 updateData = { ...updateData, ...{ "roleInfo.lastDeath": deathArr } };
             }
             break;
-        case 'endGame':
-            endGame(playRoom.roomChatID, dbServer, chatServer); break;
     }
     await dbServer.updatePlayRoom(roomID, updateData, (res) => {
+        playRoom = res.value;
+        if (gameIsEnd(playRoom)) {
+            endGame(playRoom.roomChatID, dbServer, chatServer);
+            return;
+        }
         console.log(`<<<<<<<<<<<<<<<< Phòng ${roomID}: goStage ${stage} <<<<<<<<<<<<<<<<`);
         let updateFlags = `goStage${stage}`;
         if (stage === 'readyToGame' || stage === 'discuss') {
@@ -247,7 +250,7 @@ async function goStage(chatServer, dbServer, roomID, stage, preSetup = []) {
         chatServer.sendAction(roomID, updateFlags, res.value);
 
         //next stage
-        if (state != "endGame") {
+        if (stage != "endGame") {
             const nextStage = nextStageArr[stage];
             endTimer = new Date(Date.now() + stageTimeoutArr[stage]);
             if (roomSchedule[roomID] === 'ended') {
@@ -261,10 +264,12 @@ async function goStage(chatServer, dbServer, roomID, stage, preSetup = []) {
     })
 }
 function endGame(roomID, dbServer, chatServer) {
-    roomSchedule[roomID].cancel();
-    roomSchedule[roomID] = 'ended';
+    if (roomSchedule[roomID]) {
+        roomSchedule[roomID].cancel();
+        roomSchedule[roomID] = 'ended';
+    }
     // setTimeout(() => { roomSchedule[roomID] = null; }, 5000);
-    let updateData = { ...defaultGameData, ...{ "state.status": "waiting" } }
+    let updateData = { ...defaultGameData, ...{ "state.status": "waiting", "state.dayStage": "endGame" } }
     dbServer.updatePlayRoom(roomID, updateData, (res) => {
         chatServer.sendAction(roomID, 'endGame', res.value);
     })

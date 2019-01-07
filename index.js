@@ -32,21 +32,33 @@ app.get('/play/:roomID/start', async (req, res) => {
 	}
 	console.log(`Phòng ${roomID}: Bắt đầu trò chơi...`);
 	roomIngame[roomID] = true;
+	setTimeout(() => {
+		roomIngame[roomID] = false;
+	}, 10000);
 	// kick notReady player out of chatRoom
-	let notReadyPlayers = [];
-	dbServer.getPlayRoom(roomID, { _id: 0, "players.ready": 1 }).then((playRoom) => {
-		chatServer.getUserFromChatRoom(roomID).then(users => {
-			users.forEach((userID) => {
-				if (!playRoom.players.ready[userID]) {
-					notReadyPlayers = [...notReadyPlayers, userID]
+	await dbServer.getPlayRoom(roomID, { _id: 0, state: 1, "players.ready": 1 }).then(async (playRoom) => {
+		if (playRoom.state.status != "waiting") {
+			res.status(200).json({ success: false, message: 'Game already started!' });
+			return;
+		}
+		await chatServer.getUserFromChatRoom(roomID).then(users => {
+			let notReadyPlayers = [];
+			users.forEach((user) => {
+				if (!playRoom.players.ready[user.id]) {
+					notReadyPlayers = [...notReadyPlayers, user.id];
 				}
 			});
-		});
+			return notReadyPlayers;
+		}).then(async notReadyPlayers => {
+			if (notReadyPlayers.length > 0) {
+				console.log(`===> KICK NOT READY`, notReadyPlayers);
+				chatServer.leaveRoom(roomID, notReadyPlayers);
+			}
+			// start game: first stage
+			await goStage(chatServer, dbServer, roomID, 'readyToGame', preSetupArr);
+			res.status(200).json({ success: true });
+		})
 	})
-	chatServer.leaveRoom(roomID, notReadyPlayers);
-	// start game: first stage
-	await goStage(chatServer, dbServer, roomID, 'readyToGame', preSetupArr);
-	res.status(200).json({ success: true });
 })
 app.get('/play/:roomID/do', (req, res) => {
 	const updateData = JSON.parse(req.query.action);
@@ -100,7 +112,7 @@ app.get('/play/:roomID/leave/:userID', async (req, res) => {
 	const roomID = req.params.roomID;
 	const userID = req.params.userID;
 	console.log(`GET: /play/${roomID}/leave/${userID}`);
-	await dbServer.getPlayRoom(roomID, { _id: 0, "state.status": 1, "roleInfo.deathList":1 }).then(playRoom => {
+	await dbServer.getPlayRoom(roomID, { _id: 0, "state.status": 1, "roleInfo.deathList": 1 }).then(playRoom => {
 		if (!playRoom.state.status === "waiting") {
 			if (new Date(playRoom.state.stageEnd) <= new Date()) {
 				res.status(200).json({ success: false });
