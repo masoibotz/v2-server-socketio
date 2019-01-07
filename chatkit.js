@@ -4,12 +4,15 @@ const chatkit = new Chatkit.default({
     key: '04873650-fd91-476c-9e94-f821f7727fe7:/BcAzTp7GDueJVCKaCc+ZbuY6O340bjmk9Ux8dKryns='
 })
 module.exports = class ChatServer {
-    async regNewUser(id, name) {
+    getChatkit() {
+        return chatkit;
+    }
+    async regNewUser(id, name, avatar = '') {
         var ret = {}
         await chatkit.createUser({
             id: id,
             name: name,
-            customData: { ready: false },
+            customData: { avatar: avatar },
         }).then(() => {
             console.log(`New User @${id}: ${name}`);
             ret = {
@@ -41,6 +44,22 @@ module.exports = class ChatServer {
         return await chatkit.authenticate({
             userId: user_id
         });
+    }
+    leaveRoom(roomID, userIDs) {
+        chatkit.removeUsersFromRoom({
+            roomId: roomID,
+            userIds: userIDs
+        })
+            .then(() => console.log('user removed'))
+            .catch(err => console.error(err))
+    }
+    joinRoom(roomID, userID) {
+        chatkit.addUsersToRoom({
+            roomId: roomID,
+            userIds: [userID]
+        })
+            .then(() => console.log('user joined'))
+            .catch(err => console.error(err))
     }
     sendMessage(roomID, text) {
         chatkit.sendMessage({

@@ -1,15 +1,15 @@
 var schedule = require('node-schedule')
 const stageTimeoutArr = {
     "readyToGame": 5 * 1000,
-    "cupid": 15 * 1000,
+    "cupid": 20 * 1000,
     "night": 15 * 1000,
-    "superwolf": 5 * 1000,
+    "superwolf": 8 * 1000,
     "witch": 15 * 1000,
     "discuss": 15 * 1000,
     "vote": 10 * 1000,
     "voteResult": 5 * 1000,
     "lastWord": 10 * 1000,
-    "voteYesNo": 5 * 1000,
+    "voteYesNo": 8 * 1000,
     "voteYesNoResult": 5 * 1000
 }
 const nextStageArr = {
@@ -45,44 +45,58 @@ const roleName = {
 const defaultGameData = {
     logs: ["Tóm tắt game"],
     "state.day": 0,
-    "state.deathList": [],
-    "state.lastDeath": [],
-    "roleInfo.oldManLive": 2,
+    "players.coupleID": [],
+
+    "roleInfo.victimID": "",
+    "roleInfo.deathList": [],
+    "roleInfo.lastDeath": [],
+    "roleInfo.hasCouple": false,
+    "roleInfo.angelWin": false,
     "roleInfo.witchSaveRemain": true,
     "roleInfo.witchKillRemain": true,
-    "roleInfo.witchUseSave": false,
+    "roleInfo.superWolfVictimID": '',
+    "roleInfo.oldManLive": 2,
+    "roleInfo.lastSaveID": "",
+    "roleInfo.lastFireID": "",
+
     "roleTarget.voteList": {},
-    "roleTarget.victimID": "",
+    "roleTarget.coupleList": [],
+    "roleTarget.saveID": "",
+    "roleTarget.witchKillID": "",
+    "roleTarget.witchUseSave": false,
+    "roleTarget.superWolfVictimID": "",
     "roleTarget.fireID": "",
-    "roleTarget.superWolfVictimID": '',
+    "roleTarget.fireToKill": false
 }
 var roomSchedule = [];
-async function randomRole(chatServer, dbServer, roomID, preSetup, resCallback) {
+function randomRole(playRoom, roomID, preSetup) {
     console.log(`Phòng ${roomID}: Đã SETUP XONG!!!`);
-    await chatServer.getUserFromChatRoom(roomID).then(async (users) => {
-        var readyUser = users.filter(u => {
-            return u.custom_data.ready;
-        })
-        var setup = { "-3": [], "-2": [], "-1": [], "1": [], "2": [], "3": [], "4": [], "5": [], "6": [], "7": [], "8": [], "9": [] };
-        var villagersID = [];
-        var wolfsID = [];
-        let preSet = preSetup ? preSetup : [-1, -1, -1, -1];
-        readyUser.forEach((u, i) => {
-            let roleID = preSet[i];
-            if (roleID === -1) {
-                wolfsID = [...wolfsID, u.id];
-            } else {
-                villagersID = [...villagersID, u.id];
-            }
-            setup[roleID] = [...setup[roleID], u.id];
-        })
-        resCallback({
-            setup: setup,
-            "players.villagersID": villagersID,
-            "players.wolfsID": wolfsID,
-        });
-        // chatServer.sendAction(roomID, 'loadRole', res.value);
-    }).catch(err => console.log(err))
+    var readyUser = Object.keys(playRoom.players.ready);
+    var setup = { "-3": [], "-2": [], "-1": [], "1": [], "2": [], "3": [], "4": [], "5": [], "6": [], "7": [], "8": [], "9": [] };
+    var allID = [];
+    var villagersID = [];
+    var wolfsID = [];
+    var playersName = {};
+    let preSet = preSetup ? preSetup : [-1, -1, -1, -1];
+    readyUser.forEach((u, i) => {
+        let roleID = preSet[i];
+        if (roleID === -1 || roleID === -3) {
+            wolfsID = [...wolfsID, u.id];
+        } else {
+            villagersID = [...villagersID, u.id];
+        }
+        allID = [...allID, u.id];
+        playersName[u.id] = u.name;
+        setup[roleID] = [...setup[roleID], u.id];
+    })
+    return ({
+        setup: setup,
+        "players.names": playersName,
+        "players.allID": allID,
+        "players.villagersID": villagersID,
+        "players.wolfsID": wolfsID,
+    });
+    // chatServer.sendAction(roomID, 'loadRole', res.value);
 }
 // endGame missing......................................
 async function goStage(chatServer, dbServer, roomID, stage, preSetup = []) {
@@ -99,23 +113,22 @@ async function goStage(chatServer, dbServer, roomID, stage, preSetup = []) {
         case 'readyToGame':
             roomSchedule[roomID] = null;
             //random role and reset room data
-            await randomRole(chatServer, dbServer, roomID, preSetup, (resUpdateData) => {
-                updateData = {
-                    ...updateData, ...resUpdateData, ...defaultGameData, ...{
-                        "state.status": "ingame"
-                    }
-                };
-            });
+            let randomData = randomRole(playRoom, roomID, preSetup);
+            updateData = {
+                ...updateData, ...randomData, ...defaultGameData, ...{
+                    "state.status": "ingame"
+                }
+            };
             break;
         case 'cupid': //after_voteYesNoResult or after_readyToGame: Start NEW gameDAY
             // Start NEW gameDAY
-            updateData = { ...updateData, ...{ "roleTarget.voteList": {}, "roleTarget.victimID": "", "state.day": playRoom.state.day + 1 } }
+            updateData = { ...updateData, ...{ "roleTarget.voteList": {}, "roleInfo.victimID": "", "state.day": playRoom.state.day + 1 } }
             // Thiên sứ thành dân vào ngày thứ 2
             if (playRoom.state.day + 1 == 2 && playRoom.setup[9].length > 0) {
                 updateData = { ...updateData, ...{ "setup.9": [], "setup.4": [...playRoom.setup[4], ...playRoom.setup[9]] } }
             }
             // if (gameIsEnd(playRoom)) {
-            //     endGame(playRoom.roomChatID);
+            //     goStage(chatServer, dbServer, roomID, "endGame");
             // }
             // kiểm tra có cupid không nếu không thì bỏ qua
             if (playRoom.setup[7].length == 0) {
@@ -142,7 +155,7 @@ async function goStage(chatServer, dbServer, roomID, stage, preSetup = []) {
             break;
         case 'superwolf': //after_night
             var mostVotedUser = mostVoted(playRoom);
-            updateData = { ...updateData, ...{ "roleTarget.victimID": mostVotedUser, "roleTarget.voteList": {} } };
+            updateData = { ...updateData, ...{ "roleInfo.victimID": mostVotedUser, "roleTarget.voteList": {} } };
             // kiểm tra có sói nguyền không nếu không thì bỏ qua
             if (playRoom.setup[-3].length == 0) {
                 console.log(`<<<<<<<<<<<<<<<< Phòng ${roomID}: goStage ${stage} <<<<<<<<<<<<<<<<`);
@@ -153,9 +166,9 @@ async function goStage(chatServer, dbServer, roomID, stage, preSetup = []) {
             break;
         case 'witch': //after_superwolf
             let superWolfVictimID = playRoom.roleTarget.superWolfVictimID;
-            let victimID = playRoom.roleTarget.victimID;
+            let victimID = playRoom.roleInfo.victimID;
             if (victimID != "" && victimID == superWolfVictimID) { //sói nguyền đã nguyền
-                updateData = { ...updateData, ...{ "roleInfo.superWolfVictimID": superWolfVictimID, "roleTarget.victimID": "", logs: [...playRoom.logs, `🐺${superWolfVictimID} đã bị nguyền và theo phe sói!`] } };
+                updateData = { ...updateData, ...{ "roleInfo.superWolfVictimID": superWolfVictimID, "roleInfo.victimID": "", logs: [...playRoom.logs, `🐺${superWolfVictimID} đã bị nguyền và theo phe sói!`] } };
                 victimID = "";
                 if (getRole(playRoom.setup, superWolfVictimID) > 0) {
                     updateData = {
@@ -178,23 +191,25 @@ async function goStage(chatServer, dbServer, roomID, stage, preSetup = []) {
             if (playRoom.roleTarget.witchUseSave) {
                 updateData = {
                     ...updateData, ...{
-                        "roleTarget.victimID": "",
+                        "roleInfo.victimID": "",
                         "roleTarget.witchUseSave": false,
                         "roleInfo.witchSaveRemain": false,
-                        "logs": [...playRoom.logs, `🧙‍Phù thủy đã cứu *${playRoom.roleTarget.victimID}*`]
+                        "roleInfo.lastSaveID": playRoom.roleTarget.saveID,
+                        "roleInfo.lastFireID": playRoom.roleTarget.fireID,
+                        "logs": [...playRoom.logs, `🧙‍Phù thủy đã cứu *${playRoom.roleInfo.victimID}*`]
                     }
                 };
-                playRoom.roleTarget.victimID = "";
+                playRoom.roleInfo.victimID = "";
             }
             var deathArr = await KillVictim(chatServer, dbServer, playRoom, true);
-            updateData = { ...updateData, ...{ "state.lastDeath": deathArr } };
+            updateData = { ...updateData, ...{ "roleInfo.lastDeath": deathArr } };
             // if (gameIsEnd(playRoom)) {
-            //     endGame(playRoom.roomChatID);
+            //     goStage(chatServer, dbServer, roomID, "endGame");
             // }
             break;
         case 'voteResult':// after_vote
             var mostVotedUser = mostVoted(playRoom);
-            updateData = { ...updateData, ...{ "roleTarget.victimID": mostVotedUser } };
+            updateData = { ...updateData, ...{ "roleInfo.victimID": mostVotedUser } };
             break;
         case 'lastWord': //after_voteResult
             updateData = {
@@ -202,26 +217,26 @@ async function goStage(chatServer, dbServer, roomID, stage, preSetup = []) {
                     "roleTarget.saveID": "",
                     "roleTarget.fireID": "",
                     "roleTarget.fireToKill": false,
-                    "roleTarget.superWolfVictimID": "",
-                    "state.lastSaveID": playRoom.roleTarget.saveID,
-                    "state.lastFireID": playRoom.roleTarget.fireID
+                    "roleTarget.superWolfVictimID": ""
                 }
             };
             // kiểm tra vote có bằng nhau không?
-            if (playRoom.roleTarget.victimID === "") {
+            if (playRoom.roleInfo.victimID === "") {
                 console.log(`<<<<<<<<<<<<<<<< Phòng ${roomID}: goStage ${stage} <<<<<<<<<<<<<<<< EQUALS VOTE`);
-                updateData = { ...updateData, ...{ "state.lastDeath": [] } };
+                updateData = { ...updateData, ...{ "roleInfo.lastDeath": [] } };
                 await dbServer.updatePlayRoom(roomID, updateData);
                 goStage(chatServer, dbServer, roomID, "cupid");
                 return;
             }
             break;
         case 'voteYesNoResult': // after_voteYesNo: END OF DAY
-            if (playRoom.roleTarget.victimID != "" && voteYesNo(playRoom) > 0) { // kill > save
+            if (playRoom.roleInfo.victimID != "" && voteYesNo(playRoom) > 0) { // kill > save
                 var deathArr = await KillVictim(chatServer, dbServer, playRoom, false);
-                updateData = { ...updateData, ...{ "state.lastDeath": deathArr } };
+                updateData = { ...updateData, ...{ "roleInfo.lastDeath": deathArr } };
             }
             break;
+        case 'endGame':
+            endGame(playRoom.roomChatID, dbServer, chatServer); break;
     }
     await dbServer.updatePlayRoom(roomID, updateData, (res) => {
         console.log(`<<<<<<<<<<<<<<<< Phòng ${roomID}: goStage ${stage} <<<<<<<<<<<<<<<<`);
@@ -232,17 +247,17 @@ async function goStage(chatServer, dbServer, roomID, stage, preSetup = []) {
         chatServer.sendAction(roomID, updateFlags, res.value);
 
         //next stage
-        const nextStage = nextStageArr[stage];
-        endTimer = new Date(Date.now() + stageTimeoutArr[stage]);
-        if (roomSchedule[roomID] === 'ended') {
-            console.log("++++++++++++++++++++ DELAYED SCHEDULE +++++++++++++++++++++++++");
-            roomSchedule[roomID] = null;
-            return;
+        if (state != "endGame") {
+            const nextStage = nextStageArr[stage];
+            endTimer = new Date(Date.now() + stageTimeoutArr[stage]);
+            if (roomSchedule[roomID] === 'ended') {
+                console.log("++++++++++++++++++++ DELAYED SCHEDULE +++++++++++++++++++++++++");
+                return;
+            }
+            roomSchedule[roomID] = schedule.scheduleJob(endTimer, () => {
+                goStage(chatServer, dbServer, roomID, nextStage);
+            })
         }
-        roomSchedule[roomID] = schedule.scheduleJob(endTimer, () => {
-            goStage(chatServer, dbServer, roomID, nextStage);
-        })
-
     })
 }
 function endGame(roomID, dbServer, chatServer) {
@@ -277,9 +292,9 @@ async function killAction(dbServer, playRoom, victimID) {
         }
     }
     // kill action MAIN
-    playRoom.state.deathList = [...playRoom.state.deathList, victimID];
-    console.log("-------- DEATH LIST: ", playRoom.state.deathList);
-    updateData = { ...updateData, ...{ "state.deathList": playRoom.state.deathList } }
+    playRoom.roleInfo.deathList = [...playRoom.roleInfo.deathList, victimID];
+    console.log("-------- DEATH LIST: ", playRoom.roleInfo.deathList);
+    updateData = { ...updateData, ...{ "roleInfo.deathList": playRoom.roleInfo.deathList } }
     if (victimRole == -1 || victimRole == -3 || victimID == playRoom.roleInfo.superWolfVictimID) { // giết sói
         playRoom.players.wolfsID = deleteFromArray(playRoom.players.wolfsID, victimID);
         updateData = { ...updateData, ...{ "players.wolfsID": playRoom.players.wolfsID } }
@@ -312,7 +327,7 @@ async function fireKillAction(dbServer, playRoom) {
 //missing thông báo cắn mà không chết
 async function KillVictim(chatServer, dbServer, playRoom, isNight) {
     var dieArr = [];
-    let victimID = playRoom.roleTarget.victimID;
+    let victimID = playRoom.roleInfo.victimID;
     let saveID = playRoom.roleTarget.saveID;
     let fireID = playRoom.roleTarget.fireID;
     let hunterID = playRoom.setup[3].length > 0 ? playRoom.setup[3][0] : '';
@@ -352,14 +367,14 @@ async function KillVictim(chatServer, dbServer, playRoom, isNight) {
     }
     // BẢO VỆ ĐÚNG
     if (victimID != "" && victimID == saveID && isNight) {
-        updateData = { ...updateData, ...{ "roleTarget.victimID": "" } };
+        updateData = { ...updateData, ...{ "roleInfo.victimID": "" } };
         victimID = "";
     }
     // Cắn trúng BÁN SÓI
     if (victimID != "" && victimRole == -2 && isNight) {
         updateData = {
             ...updateData, ...{
-                "roleTarget.victimID": "",
+                "roleInfo.victimID": "",
                 "players.wolfsID": [...playRoom.players.wolfsID, victimID],
                 "players.villagersID": deleteFromArray(playRoom.players.villagersID, victimID),
                 "setup.-2": deleteFromArray(playRoom.setup[-2], victimID),
@@ -370,7 +385,7 @@ async function KillVictim(chatServer, dbServer, playRoom, isNight) {
         victimID = "";
     }
     // GIÀ LÀNG
-    if (victimID!="" && victimRole == 6) {
+    if (victimID != "" && victimRole == 6) {
         if (isNight && playRoom.roleInfo.oldManLive - 1 > 0) {
             // còn 2 mạng
             updateData = { ...updateData, ...{ "roleInfo.oldManLive": playRoom.roleInfo.oldManLive - 1 } };
@@ -436,7 +451,7 @@ async function KillVictim(chatServer, dbServer, playRoom, isNight) {
     return dieArr;
 }
 function isAlive(playRoom, userID) {
-    return playRoom.state.deathList.indexOf(userID) == -1;
+    return playRoom.roleInfo.deathList.indexOf(userID) == -1;
 }
 function getRole(setup, userID) {
     var userRole = 0;
@@ -476,7 +491,7 @@ function mostVoted(playRoom) {
 function voteYesNo(playRoom) {
     var count = 0;
     Object.keys(playRoom.roleTarget.voteList).forEach((user) => {
-        count += playRoom.roleTarget.voteList[user] == playRoom.roleTarget.victimID ? 1 : 0;
+        count += playRoom.roleTarget.voteList[user] == playRoom.roleInfo.victimID ? 1 : 0;
     });
     return count;
 }
