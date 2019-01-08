@@ -25,6 +25,12 @@ const nextStageArr = {
     "voteYesNo": "voteYesNoResult",
     "voteYesNoResult": "cupid"
 }
+const phe = {
+    "9": "Thiên sứ",
+    "3": "Cặp đôi",
+    "-1": "Sói",
+    "1": "DÂN",
+}
 const roleName = {
     // PHE SÓI
     "-1": '🐺SÓI', //done
@@ -105,6 +111,7 @@ function randomRole(chatServer, playRoom, roomID, preSetup) {
 // endGame missing......................................
 async function goStage(chatServer, dbServer, roomID, stage, preSetup = []) {
     console.log(`>>>>>>>>>>>>>>>> Phòng ${roomID}: goStage ${stage} >>>>>>>>>>>>>>>>`);
+    let names = playRoom.players.names
     let endTimer = new Date(Date.now() + stageTimeoutArr[stage]);
     var updateData = { "state.dayStage": stage, "state.stageEnd": endTimer.toISOString() };
 
@@ -128,7 +135,13 @@ async function goStage(chatServer, dbServer, roomID, stage, preSetup = []) {
             break;
         case 'cupid': //after_voteYesNoResult or after_readyToGame: Start NEW gameDAY
             // Start NEW gameDAY
-            updateData = { ...updateData, ...{ "roleTarget.voteList": {}, "roleInfo.victimID": "", "state.day": playRoom.state.day + 1 } }
+            updateData = {
+                ...updateData, ...{
+                    "roleTarget.voteList": {},
+                    "roleInfo.victimID": "", "state.day": playRoom.state.day + 1,
+                    logs: [...playRoom.logs, `\nĐÊM THỨ ${playRoom.state.day + 1}\n`]
+                }
+            }
             // Thiên sứ thành dân vào ngày thứ 2
             if (playRoom.state.day + 1 == 2 && playRoom.setup[9].length > 0) {
                 updateData = { ...updateData, ...{ "setup.9": [], "setup.4": [...playRoom.setup[4], ...playRoom.setup[9]] } }
@@ -143,12 +156,14 @@ async function goStage(chatServer, dbServer, roomID, stage, preSetup = []) {
             break;
         case 'night': //after_cupid
             if (playRoom.setup[7].length != 0 && playRoom.roleTarget.coupleList.length == 2) { // đã ghép đôi
+                let coupleID = playRoom.roleTarget.coupleList;
                 updateData = {
                     ...updateData, ...{
                         "players.coupleID": playRoom.roleTarget.coupleList,
                         "setup.4": [...playRoom.setup[4], playRoom.setup[7][0]],
                         "setup.7": [],
                         "roleTarget.coupleList": [],
+                        logs: [...playRoom.logs, `Ghép đôi ${names[coupleID[0]]} với ${names[coupleID[1]]}`]
                     }
                 };
                 if (getRole(playRoom.setup, playRoom.roleTarget.coupleList[0]) * getRole(playRoom.setup, playRoom.roleTarget.coupleList[1]) < 0) {
@@ -158,7 +173,13 @@ async function goStage(chatServer, dbServer, roomID, stage, preSetup = []) {
             break;
         case 'superwolf': //after_night
             var mostVotedUser = mostVoted(playRoom);
-            updateData = { ...updateData, ...{ "roleInfo.victimID": mostVotedUser, "roleTarget.voteList": {} } };
+            updateData = {
+                ...updateData, ...{
+                    "roleInfo.victimID": mostVotedUser,
+                    "roleTarget.voteList": {},
+                    logs: [...playRoom.logs, `Tiên tri soi ${names[playRoom.roleTarget.seeID]}`, `Bảo vệ cho ${names[playRoom.roleTarget.saveID]}`]
+                }
+            };
             // kiểm tra có sói nguyền không nếu không thì bỏ qua
             if (playRoom.setup[-3].length == 0) {
                 console.log(`<<<<<<<<<<<<<<<< Phòng ${roomID}: goStage ${stage} <<<<<<<<<<<<<<<<`);
@@ -171,7 +192,12 @@ async function goStage(chatServer, dbServer, roomID, stage, preSetup = []) {
             let superWolfVictimID = playRoom.roleTarget.superWolfVictimID;
             let victimID = playRoom.roleInfo.victimID;
             if (victimID != "" && victimID == superWolfVictimID) { //sói nguyền đã nguyền
-                updateData = { ...updateData, ...{ "roleInfo.superWolfVictimID": superWolfVictimID, "roleInfo.victimID": "", logs: [...playRoom.logs, `🐺${superWolfVictimID} đã bị nguyền và theo phe sói!`] } };
+                updateData = {
+                    ...updateData, ...{
+                        "roleInfo.superWolfVictimID": superWolfVictimID, "roleInfo.victimID": "",
+                        logs: [...playRoom.logs, `🐺${names[superWolfVictimID]} đã bị nguyền và theo phe sói!`]
+                    }
+                };
                 victimID = "";
                 if (getRole(playRoom.setup, superWolfVictimID) > 0) {
                     updateData = {
@@ -204,7 +230,9 @@ async function goStage(chatServer, dbServer, roomID, stage, preSetup = []) {
                 };
                 playRoom.roleInfo.victimID = "";
             }
-            var deathArr = await KillVictim(chatServer, dbServer, playRoom, true);
+            var deathArr = await KillVictim(chatServer, dbServer, playRoom, true, (killUpdateData) => {
+                updateData = { ...updateData, ...killUpdateData };
+            });
             updateData = { ...updateData, ...{ "roleInfo.lastDeath": deathArr } };
             break;
         case 'voteResult':// after_vote
@@ -231,14 +259,17 @@ async function goStage(chatServer, dbServer, roomID, stage, preSetup = []) {
             break;
         case 'voteYesNoResult': // after_voteYesNo: END OF DAY
             if (playRoom.roleInfo.victimID != "" && voteYesNo(playRoom) > 0) { // kill > save
-                var deathArr = await KillVictim(chatServer, dbServer, playRoom, false);
+                var deathArr = await KillVictim(chatServer, dbServer, playRoom, false, (killUpdateData) => {
+                    updateData = { ...updateData, ...killUpdateData };
+                });
                 updateData = { ...updateData, ...{ "roleInfo.lastDeath": deathArr } };
             }
             break;
     }
     await dbServer.updatePlayRoom(roomID, updateData, (playRoom) => {
-        if (gameIsEnd(playRoom)) {
-            endGame(playRoom.roomChatID, dbServer, chatServer);
+        let roleWin = gameIsEnd(playRoom);
+        if (roleWin) {
+            endGame(playRoom.roomChatID, dbServer, chatServer, roleWin);
             return;
         }
         console.log(`<<<<<<<<<<<<<<<< Phòng ${roomID}: goStage ${stage} <<<<<<<<<<<<<<<<`);
@@ -262,19 +293,19 @@ async function goStage(chatServer, dbServer, roomID, stage, preSetup = []) {
         }
     })
 }
-function endGame(roomID, dbServer, chatServer) {
+function endGame(roomID, dbServer, chatServer, roleWin) {
     if (roomSchedule[roomID]) {
         roomSchedule[roomID].cancel();
         roomSchedule[roomID] = 'ended';
     }
     // setTimeout(() => { roomSchedule[roomID] = null; }, 5000);
-    let updateData = { ...defaultGameData, ...{ "state.status": "waiting", "state.dayStage": "endGame" } }
+    let updateData = { ...defaultGameData, ...{ "state.status": "waiting", "state.dayStage": "endGame", roleWin: roleWin } }
     dbServer.updatePlayRoom(roomID, updateData, (playRoom) => {
         chatServer.sendAction(roomID, 'endGame', playRoom);
     })
 }
 //done
-async function killAction(dbServer, playRoom, victimID) {
+async function killAction(dbServer, playRoom, victimID, updateDataCallback = () => { }) {
     // không giết ai, thằng bị giết out rồi, thằng cần giết chết rồi
     if (victimID == "" || !isAlive(playRoom, victimID)) {
         return;
@@ -309,18 +340,28 @@ async function killAction(dbServer, playRoom, victimID) {
     await dbServer.updatePlayRoom(playRoom.roomChatID, updateData);
 
     if (victimRole == 3) { //người chết là thợ săn
-        await killAction(dbServer, playRoom, playRoom.roleTarget.fireID);
-        await cupidKill(dbServer, playRoom, playRoom.roleTarget.fireID);
+        await killAction(dbServer, playRoom, playRoom.roleTarget.fireID, (killActionUpdateData) => {
+            Object.assign(updateData, killActionUpdateData);
+        });
+        await cupidKill(dbServer, playRoom, playRoom.roleTarget.fireID, (cupidKillUpdateData) => {
+            Object.assign(updateData, cupidKillUpdateData);
+        });
     }
+    updateDataCallback(updateData);
 }
 //done
-async function cupidKill(dbServer, playRoom, victimID) {
+async function cupidKill(dbServer, playRoom, victimID, updateDataCallback = () => { }) {
+    let updateData = {};
     if (playRoom.players.coupleID && playRoom.players.coupleID.indexOf(victimID) != -1) { //là 1 người trong cặp đôi
         playRoom.players.coupleID.forEach(async (userID) => {
             if (victimID != userID && isAlive(playRoom, userID)) {
-                await killAction(dbServer, playRoom, userID);
+                await killAction(dbServer, playRoom, userID, (killActionUpdateData) => {
+                    Object.assign(updateData, killActionUpdateData);
+                });
             }
         });
+        updateData = { ...updateData, ...{ "roleInfo.hasCouple": false } };
+        updateDataCallback(updateData);
         await dbServer.updatePlayRoom(playRoom.roomChatID, { "roleInfo.hasCouple": false });
     }
 }
@@ -329,7 +370,7 @@ async function fireKillAction(dbServer, playRoom) {
 
 }
 //missing thông báo cắn mà không chết
-async function KillVictim(chatServer, dbServer, playRoom, isNight) {
+async function KillVictim(chatServer, dbServer, playRoom, isNight, updateDataCallback) {
     var dieArr = [];
     let victimID = playRoom.roleInfo.victimID;
     let saveID = playRoom.roleTarget.saveID;
@@ -338,6 +379,7 @@ async function KillVictim(chatServer, dbServer, playRoom, isNight) {
     let victimRole = getRole(playRoom.setup, victimID);
     let logs = [];
     let updateData = {};
+    let names = playRoom.players.names;
     // var isNight = Object.keys(nextStageArr).indexOf(playRoom.state.dayStage) <= Object.keys(nextStageArr).indexOf('discuss') ? true : false;
 
     // THỢ SĂN
@@ -355,12 +397,12 @@ async function KillVictim(chatServer, dbServer, playRoom, isNight) {
         if (fireVictimRole > 0) { // bắn trúng dân làng (giết thợ săn => thợ săn tự ghim nạn nhân)
             await killAction(dbServer, playRoom, hunterID);
             await cupidKill(dbServer, playRoom, hunterID);
-            logs.push(`🏹Thợ săn đã bắn ${roleName[getRole(playRoom.setup, fireID)]} *${fireID}*\n⚔️Thợ săn phải đền mạng!`);
+            logs.push(`🏹Thợ săn đã bắn ${roleName[getRole(playRoom.setup, fireID)]} *${names[fireID]}*\n⚔️Thợ săn phải đền mạng!`);
             deathIDs = [hunterID, fireID];
         } else { //chỉ giết nạn nhân
             await killAction(dbServer, playRoom, fireID);
             await cupidKill(dbServer, playRoom, fireID);
-            logs.push(`🏹Thợ săn đã bắn chết sói *${fireID}*`);
+            logs.push(`🏹Thợ săn đã bắn chết sói *${names[fireID]}*`);
             deathIDs = [fireID];
         }
         deathIDs.forEach(deathID => {
@@ -385,7 +427,7 @@ async function KillVictim(chatServer, dbServer, playRoom, isNight) {
                 "setup.-1": [...playRoom.setup[-1], victimID],
             }
         };
-        logs.push(`☪ BÁN SÓI *${victimID}* trở thành 🐺SÓI`);
+        logs.push(`☪ BÁN SÓI *${names[victimID]}* trở thành 🐺SÓI`);
         victimID = "";
     }
     // GIÀ LÀNG
@@ -393,7 +435,7 @@ async function KillVictim(chatServer, dbServer, playRoom, isNight) {
         if (isNight && playRoom.roleInfo.oldManLive - 1 > 0) {
             // còn 2 mạng
             updateData = { ...updateData, ...{ "roleInfo.oldManLive": playRoom.roleInfo.oldManLive - 1 } };
-            logs.push(`⚠️ GIÀ LÀNG *${victimID}* đã bị cắn còn 1 mạng!`);
+            logs.push(`⚠️ GIÀ LÀNG *${names[victimID]}* đã bị cắn còn 1 mạng!`);
             victimID = "";
         } else {
             // bị treo cổ hoặc hết mạng
@@ -405,14 +447,14 @@ async function KillVictim(chatServer, dbServer, playRoom, isNight) {
         await killAction(dbServer, playRoom, victimID);
         await cupidKill(dbServer, playRoom, victimID);
         dieArr.push(victimID);
-        logs.push(`⚔️ *${victimID}* là ${roleName[victimRole]} đã bị ${isNight ? 'SÓI cắn' : 'treo cổ'}!`);
+        logs.push(`⚔️ *${names[victimID]}* là ${roleName[victimRole]} đã bị ${isNight ? 'SÓI cắn' : 'treo cổ'}!`);
         if (isNight && victimRole == 3) { //người chết là thợ săn
             let fireID = playRoom.roleTarget.fireID
             if (fireID != "") { //thợ săn không bắn lên trời
                 if (dieArr.indexOf(fireID) == -1) {
                     dieArr.push(fireID);
                 }
-                logs.push(`🏹Thợ săn ghim (bị động) chết ${roleName[getRole(playRoom.setup, fireID)]} *${fireID}*`);
+                logs.push(`🏹Thợ săn ghim (bị động) chết ${roleName[getRole(playRoom.setup, fireID)]} *${names[fireID]}*`);
             }
         }
     }
@@ -426,7 +468,7 @@ async function KillVictim(chatServer, dbServer, playRoom, isNight) {
             if (dieArr.indexOf(witchKillID) == -1) {
                 dieArr.push(witchKillID);
             }
-            logs.push(`🧙‍Phù thủy đã giết ${roleName[getRole(playRoom.setup, witchKillID)]} *${witchKillID}*`);
+            logs.push(`🧙‍Phù thủy đã giết ${roleName[getRole(playRoom.setup, witchKillID)]} *${names[witchKillID]}*`);
         }
     }
 
@@ -439,7 +481,7 @@ async function KillVictim(chatServer, dbServer, playRoom, isNight) {
             if (dieArr.indexOf(secondID) == -1) { // người còn lại chưa chết
                 dieArr.push(secondID);
             }
-            logs.push(`💘Do là cặp đôi, ${roleName[getRole(playRoom.setup, secondID)]} *${secondID}* cũng chết theo`);
+            logs.push(`💘Do là cặp đôi, ${roleName[getRole(playRoom.setup, secondID)]} *${names[secondID]}* cũng chết theo`);
         }
     });
     // update logs
@@ -449,9 +491,8 @@ async function KillVictim(chatServer, dbServer, playRoom, isNight) {
         }
     }
     // kiểm tra updateData có rỗng không?
-    if (!(Object.keys(updateData).length === 0 && updateData.constructor === Object)) {
-        await dbServer.updatePlayRoom(playRoom.roomChatID, updateData);
-    }
+    if (!(Object.keys(updateData).length === 0 && updateData.constructor === Object)) { }
+    updateDataCallback(updateData);
     return dieArr;
 }
 function isAlive(playRoom, userID) {

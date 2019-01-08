@@ -69,9 +69,10 @@ app.get('/play/:roomID/do', (req, res) => {
 })
 
 app.post('/reg', async (req, res) => {
-	const { id, name } = req.body;
+	const { id, name, avatar } = req.body;
 	console.log(`[+] REG for user: ${req.id}`);
-	var ret = await chatServer.regNewUser(id, name);
+	var ret = await chatServer.regNewUser(id, name, avatar);
+	await dbServer.newUser(id, name, avatar);
 	res.status(200).json(ret);
 })
 app.post('/auth', async (req, res) => {

@@ -12,29 +12,27 @@ module.exports = class ChatServer {
         await chatkit.createUser({
             id: id,
             name: name,
-            customData: { avatar: avatar },
+            avatarURL: avatar
         }).then(() => {
-            console.log(`New User @${id}: ${name}`);
+            console.log(`New User @${id}: ${name} (${avatar})`);
             ret = {
-                success: true,
-                id: id,
-                name: name
+                success: true
             };
         }).catch((err) => {
             if (err.error === 'services/chatkit/user_already_exists') {
                 ret = {
                     success: false,
-                    err: "Mã bí mật trùng lặp!"
+                    message: "Tên đã được sử dụng! Vui lòng chọn tên khác"
                 }
             } else if (err.error === 'services/chatkit/unprocessable_entity/validation_failed') {
                 ret = {
                     success: false,
-                    err: "Vui lòng nhập đủ tên đăng nhập và mã bí mật!"
+                    message: "Vui lòng nhập đủ tên đăng nhập và mã bí mật!"
                 }
             } else {
                 ret = {
                     success: false,
-                    err: err.error
+                    message: err.error
                 }
             }
         });

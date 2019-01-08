@@ -2,6 +2,7 @@ var db = {
     "_id": ObjectId("5be6e95f8758f81af80b3d9a"),
     "roomChatID": "20509498",
     "hostUserID": "duy",
+    "roleWin": 1,
     "logs": [
         "Tóm tắt game"
     ],
@@ -68,6 +69,7 @@ var db = {
     "roleTarget": {
         "voteList": {},
         "coupleList": [],
+        "seeID": "",
         "saveID": "",
         "witchKillID": "",
         "witchUseSave": false,

@@ -14,6 +14,16 @@ module.exports = class DBServer {
             client.close();
         });
     }
+    newUser(userID, name, avatar) {
+        return new Promise((resolve, reject) => {
+            this.connectUser(collection => {
+                collection.insertOne({ userID: userID, name: name, avatar: avatar }, function (err, result) {
+                    if (err) throw err;
+                    resolve(result);
+                });
+            })
+        })
+    }
     getUser(userID, filter = {}, params = {}) {
         return new Promise((resolve, reject) => {
             this.connectUser(collection => {
