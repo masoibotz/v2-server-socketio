@@ -25,7 +25,8 @@ app.get('/play/:roomID/end', (req, res) => {
 })
 app.get('/play/:roomID/start', async (req, res) => {
 	const roomID = req.params.roomID;
-	const preSetupArr = JSON.parse(req.query.setup);
+	const preSetup = req.query.setup;
+	const preSetupArr = preSetup ? JSON.parse(preSetup) : [];
 	if (roomIngame[roomID]) {
 		res.status(200).json({ success: false, message: 'Game already started!' });
 		return;
@@ -34,7 +35,7 @@ app.get('/play/:roomID/start', async (req, res) => {
 	roomIngame[roomID] = true;
 	setTimeout(() => {
 		roomIngame[roomID] = false;
-	}, 10000);
+	}, 15000);
 	// kick notReady player out of chatRoom
 	await dbServer.getPlayRoom(roomID, { _id: 0, state: 1, "players.ready": 1 }).then(async (playRoom) => {
 		if (playRoom.state.status != "waiting") {
@@ -91,6 +92,8 @@ app.get('/play/:roomID/:onOff-ready/:userID', async (req, res) => {
 	// var ret = await chatServer.ready(userID, onOff);
 	await dbServer.updatePlayRoom(roomID, {
 		[`players.ready.${userID}`]: onOff
+	}).then(playRoom => {
+		chatServer.sendAction(roomID, 'ready', playRoom);
 	});
 	console.log(`GET: /play/${roomID}/${onOff}-ready/${userID}`);
 	res.status(200).json({ success: true });
@@ -99,10 +102,10 @@ app.get('/play/:roomID/join/:userID', async (req, res) => {
 	const roomID = req.params.roomID;
 	const userID = req.params.userID;
 	console.log(`GET: /play/${roomID}/join/${userID}`);
-	await dbServer.getPlayRoom(roomID, { _id: 0, "state.status": 1 }).then(playRoom => {
+	await dbServer.getPlayRoom(roomID, { _id: 0, "state.status": 1, "players.ready": 1 }).then(playRoom => {
 		if (playRoom.state.status === "waiting") {
 			chatServer.joinRoom(roomID, userID);
-			res.status(200).json({ success: true });
+			res.status(200).json({ success: true, ready: playRoom.players.ready });
 		} else {
 			res.status(200).json({ success: false });
 		}

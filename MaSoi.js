@@ -81,7 +81,7 @@ function randomRole(chatServer, playRoom, roomID, preSetup) {
         var villagersID = [];
         var wolfsID = [];
         var playersName = {};
-        let preSet = preSetup ? preSetup : [-1, -1, -1, -1];
+        let preSet = preSetup.length > 0 ? preSetup : [-1, 1, 2, 4];
         readyUser.forEach((u, i) => {
             let roleID = preSet[i];
             if (roleID === -1 || roleID === -3) {
@@ -236,8 +236,7 @@ async function goStage(chatServer, dbServer, roomID, stage, preSetup = []) {
             }
             break;
     }
-    await dbServer.updatePlayRoom(roomID, updateData, (res) => {
-        playRoom = res.value;
+    await dbServer.updatePlayRoom(roomID, updateData, (playRoom) => {
         if (gameIsEnd(playRoom)) {
             endGame(playRoom.roomChatID, dbServer, chatServer);
             return;
@@ -247,7 +246,7 @@ async function goStage(chatServer, dbServer, roomID, stage, preSetup = []) {
         if (stage === 'readyToGame' || stage === 'discuss') {
             updateFlags = "loadRole";
         }
-        chatServer.sendAction(roomID, updateFlags, res.value);
+        chatServer.sendAction(roomID, updateFlags, playRoom);
 
         //next stage
         if (stage != "endGame") {
@@ -270,8 +269,8 @@ function endGame(roomID, dbServer, chatServer) {
     }
     // setTimeout(() => { roomSchedule[roomID] = null; }, 5000);
     let updateData = { ...defaultGameData, ...{ "state.status": "waiting", "state.dayStage": "endGame" } }
-    dbServer.updatePlayRoom(roomID, updateData, (res) => {
-        chatServer.sendAction(roomID, 'endGame', res.value);
+    dbServer.updatePlayRoom(roomID, updateData, (playRoom) => {
+        chatServer.sendAction(roomID, 'endGame', playRoom);
     })
 }
 //done

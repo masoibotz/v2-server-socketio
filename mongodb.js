@@ -42,8 +42,8 @@ module.exports = class DBServer {
                 }, { returnOriginal: false }, function (err, res) {
                     if (err) throw err;
                     console.log(`Phòng ${roomID}: Cập nhật `, updateData);
-                    callback(res);
-                    resolve(res);
+                    callback(res.value);
+                    resolve(res.value);
                 });
             })
         })
