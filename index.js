@@ -91,9 +91,22 @@ app.get('/play/:roomID/:onOff-ready/:userID', async (req, res) => {
 	const userID = req.params.userID;
 	const onOff = req.params.onOff === 'on' ? true : false;
 	// var ret = await chatServer.ready(userID, onOff);
-	await dbServer.updatePlayRoom(roomID, {
+	var updateData = {
 		[`players.ready.${userID}`]: onOff
-	}).then(playRoom => {
+	};
+	if (onOff) { // ready
+		await chatServer.getUserFromChatRoom(roomID).then(users => {
+			let name = users.find((u) => {
+				return u.id = userID;
+			}).name;
+			updateData = {
+				...updateData, ...{
+					[`players.names.${userID}`]: name
+				}
+			}
+		})
+	}
+	await dbServer.updatePlayRoom(roomID, updateData).then(playRoom => {
 		chatServer.sendAction(roomID, 'ready', playRoom);
 	});
 	console.log(`GET: /play/${roomID}/${onOff}-ready/${userID}`);
