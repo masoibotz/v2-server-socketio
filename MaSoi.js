@@ -111,7 +111,6 @@ function randomRole(chatServer, playRoom, roomID, preSetup) {
 // endGame missing......................................
 async function goStage(chatServer, dbServer, roomID, stage, preSetup = []) {
     console.log(`>>>>>>>>>>>>>>>> Phòng ${roomID}: goStage ${stage} >>>>>>>>>>>>>>>>`);
-    let names = playRoom.players.names
     let endTimer = new Date(Date.now() + stageTimeoutArr[stage]);
     var updateData = { "state.dayStage": stage, "state.stageEnd": endTimer.toISOString() };
 
@@ -119,7 +118,7 @@ async function goStage(chatServer, dbServer, roomID, stage, preSetup = []) {
     await dbServer.getPlayRoom(roomID).then(data => {
         playRoom = data;
     })
-
+    let names = playRoom.players.names;
     switch (stage) {
         case 'readyToGame':
             roomSchedule[roomID] = null;
