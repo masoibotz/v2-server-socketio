@@ -87,7 +87,7 @@ function randomRole(chatServer, playRoom, roomID, preSetup) {
         var villagersID = [];
         var wolfsID = [];
         var playersName = {};
-        let preSet = preSetup.length > 0 ? preSetup : [-1, 1, 2, 4];
+        let preSet = preSetup.length > 0 ? preSetup : [-1, 1, 4, -2, 2, -1, 4, 3, -3, 4, 4, 4, 4];
         readyUser.forEach((u, i) => {
             let roleID = preSet[i];
             if (roleID === -1 || roleID === -3) {
