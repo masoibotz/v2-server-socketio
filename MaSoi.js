@@ -2,15 +2,15 @@ var schedule = require('node-schedule')
 const stageTimeoutArr = {
     "readyToGame": 5 * 1000,
     "cupid": 20 * 1000,
-    "night": 15 * 1000,
-    "superwolf": 8 * 1000,
+    "night": 35 * 1000,
+    "superwolf": 10 * 1000,
     "witch": 15 * 1000,
-    "discuss": 15 * 1000,
-    "vote": 10 * 1000,
-    "voteResult": 5 * 1000,
-    "lastWord": 10 * 1000,
-    "voteYesNo": 8 * 1000,
-    "voteYesNoResult": 5 * 1000
+    "discuss": 3 * 60 * 1000,
+    "vote": 15 * 1000,
+    "voteResult": 10 * 1000,
+    "lastWord": 1 * 60 * 1000,
+    "voteYesNo": 15 * 1000,
+    "voteYesNoResult": 10 * 1000
 }
 const nextStageArr = {
     "readyToGame": "cupid",
