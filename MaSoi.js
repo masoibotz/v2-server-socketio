@@ -1,80 +1,8 @@
 var schedule = require('node-schedule')
-const stageTimeoutArr = {
-    "readyToGame": 5 * 1000,
-    "cupid": 20 * 1000,
-    "night": 35 * 1000,
-    "superwolf": 10 * 1000,
-    "witch": 15 * 1000,
-    "discuss": 3 * 60 * 1000,
-    "vote": 15 * 1000,
-    "voteResult": 10 * 1000,
-    "lastWord": 1 * 60 * 1000,
-    "voteYesNo": 15 * 1000,
-    "voteYesNoResult": 10 * 1000
-}
-const nextStageArr = {
-    "readyToGame": "cupid",
-    "cupid": "night",
-    "night": "superwolf",
-    "superwolf": "witch",
-    "witch": "discuss",
-    "discuss": "vote",
-    "vote": "voteResult",
-    "voteResult": "lastWord",
-    "lastWord": "voteYesNo",
-    "voteYesNo": "voteYesNoResult",
-    "voteYesNoResult": "cupid"
-}
-const phe = {
-    "9": "Thiên sứ",
-    "3": "Cặp đôi",
-    "-1": "Sói",
-    "1": "DÂN",
-}
-const roleName = {
-    // PHE SÓI
-    "-1": '🐺SÓI', //done
-    "-2": '🐺BÁN SÓI', //done
-    "-3": '🐺SÓI NGUYỀN',
+const { defaultGameData, nextStageArr, phe, roleName, shuffleArray, stageTimeoutArr, roleSetup, random } = require('./Utils');
 
-    // PHE DÂN
-    "1": '👁TIÊN TRI', //await 
-    "2": '🛡BẢO VỆ', //done
-    "3": '🏹THỢ SĂN', //done
-    "4": '🎅DÂN', //self_done
-    "5": '🧙‍PHÙ THỦY',
-    "6": '👴GIÀ LÀNG', //done
-    "7": '👼THẦN TÌNH YÊU',
-    "8": '👽NGƯỜI HÓA SÓI', //await
-    "9": '🧚‍THIÊN SỨ', //done
-}
-const defaultGameData = {
-    "state.day": 0,
-    "players.coupleID": [],
-
-    "roleInfo.victimID": "",
-    "roleInfo.deathList": [],
-    "roleInfo.lastDeath": [],
-    "roleInfo.hasCouple": false,
-    "roleInfo.angelWin": false,
-    "roleInfo.witchSaveRemain": true,
-    "roleInfo.witchKillRemain": true,
-    "roleInfo.superWolfVictimID": '',
-    "roleInfo.oldManLive": 2,
-    "roleInfo.lastSaveID": "",
-    "roleInfo.lastFireID": "",
-
-    "roleTarget.voteList": {},
-    "roleTarget.coupleList": [],
-    "roleTarget.saveID": "",
-    "roleTarget.witchKillID": "",
-    "roleTarget.witchUseSave": false,
-    "roleTarget.superWolfVictimID": "",
-    "roleTarget.fireID": "",
-    "roleTarget.fireToKill": false
-}
 var roomSchedule = [];
-function randomRole(chatServer, playRoom, roomID, preSetup) {
+function randomRole(chatServer, playRoom, roomID, customSetup) {
     return chatServer.getUserFromChatRoom(roomID).then(users => {
         return users.filter(u => {
             return playRoom.players.ready[u.id];
@@ -87,9 +15,19 @@ function randomRole(chatServer, playRoom, roomID, preSetup) {
         var villagersID = [];
         var wolfsID = [];
         var playersName = {};
-        let preSet = preSetup.length > 0 ? preSetup : [-1, 1, 4, -2, 2, -1, 4, 3, -3, 4, 4, 4, 4];
+        var preSet;
+        if (customSetup.length > 0) {
+            preSet = customSetup;
+        } else {
+            let countPlayer = readyUser.length;
+            let numOfSetup = roleSetup[countPlayer] ? roleSetup[countPlayer].length : 0;
+            if (numOfSetup > 0) {
+                preSet = roleSetup[countPlayer][random(0, numOfSetup-1)];
+            }
+        }
+        preSet = shuffleArray(preSet);
         readyUser.forEach((u, i) => {
-            let roleID = preSet[i];
+            let roleID = preSet[i] ? preSet[i] : 4;
             if (roleID === -1 || roleID === -3) {
                 wolfsID = [...wolfsID, u.id];
             } else {
