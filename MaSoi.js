@@ -71,7 +71,7 @@ async function goStage(chatServer, dbServer, roomID, stage, preSetup = []) {
                 ...updateData, ...{
                     "roleTarget.voteList": {},
                     "roleInfo.victimID": "", "state.day": playRoom.state.day + 1,
-                    logs: [...playRoom.logs, `\nĐÊM THỨ ${playRoom.state.day + 1}\n`]
+                    logs: [...playRoom.logs, `ĐÊM THỨ ${playRoom.state.day + 1}\n`]
                 }
             }
             // Thiên sứ thành dân vào ngày thứ 2
