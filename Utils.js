@@ -66,6 +66,7 @@ const defaultGameData = {
     "roleTarget.voteList": {},
     "roleTarget.coupleList": [],
     "roleTarget.saveID": "",
+    "roleTarget.seeID": "",
     "roleTarget.witchKillID": "",
     "roleTarget.witchUseSave": false,
     "roleTarget.superWolfVictimID": "",

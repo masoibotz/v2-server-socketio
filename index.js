@@ -97,7 +97,7 @@ app.get('/play/:roomID/:onOff-ready/:userID', async (req, res) => {
 	if (onOff) { // ready
 		await chatServer.getUserFromChatRoom(roomID).then(users => {
 			let name = users.find((u) => {
-				return u.id = userID;
+				return u.id == userID;
 			}).name;
 			updateData = {
 				...updateData, ...{
