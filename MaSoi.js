@@ -44,7 +44,7 @@ function randomRole(chatServer, playRoom, roomID, customSetup) {
     });
 }
 // MAIN flow
-async function goStage(chatServer, dbServer, roomID, stage, preSetup = []) {
+async function goStage(chatServer, dbServer, roomID, stage, preSetup = [], autoNextStage = true) {
     console.log(`>>>>>>>>>>>>>>>> Phòng ${roomID}: goStage ${stage} >>>>>>>>>>>>>>>>`);
     // get playRoom from DB
     var playRoom = {}; await dbServer.getPlayRoom(roomID).then(data => { playRoom = data; })
@@ -82,7 +82,7 @@ async function goStage(chatServer, dbServer, roomID, stage, preSetup = []) {
             if (playRoom.setup[7].length == 0) {
                 console.log(`<<<<<<<<<<<<<<<< Phòng ${roomID}: goStage ${stage} <<<<<<<<<<<<<<<<`);
                 await dbServer.updatePlayRoom(roomID, updateData);
-                goStage(chatServer, dbServer, roomID, nextStageArr[stage]);
+                goStage(chatServer, dbServer, roomID, nextStageArr[stage], [], autoNextStage);
                 return;
             }
             break;
@@ -119,7 +119,7 @@ async function goStage(chatServer, dbServer, roomID, stage, preSetup = []) {
             if (playRoom.setup[-3].length == 0) {
                 console.log(`<<<<<<<<<<<<<<<< Phòng ${roomID}: goStage ${stage} <<<<<<<<<<<<<<<<`);
                 await dbServer.updatePlayRoom(roomID, updateData);
-                goStage(chatServer, dbServer, roomID, nextStageArr[stage]);
+                goStage(chatServer, dbServer, roomID, nextStageArr[stage], [], autoNextStage);
                 return;
             }
             break;
@@ -147,7 +147,7 @@ async function goStage(chatServer, dbServer, roomID, stage, preSetup = []) {
             if (playRoom.setup[5].length == 0 || ((victimID === "" || !playRoom.roleInfo.witchSaveRemain) && !playRoom.roleInfo.witchKillRemain)) {
                 console.log(`<<<<<<<<<<<<<<<< Phòng ${roomID}: goStage ${stage} <<<<<<<<<<<<<<<<`);
                 await dbServer.updatePlayRoom(roomID, updateData);
-                goStage(chatServer, dbServer, roomID, nextStageArr[stage]);
+                goStage(chatServer, dbServer, roomID, nextStageArr[stage], [], autoNextStage);
                 return;
             }
             break;
@@ -189,7 +189,7 @@ async function goStage(chatServer, dbServer, roomID, stage, preSetup = []) {
                 console.log(`<<<<<<<<<<<<<<<< Phòng ${roomID}: goStage ${stage} <<<<<<<<<<<<<<<< EQUALS VOTE`);
                 updateData = { ...updateData, ...{ "roleInfo.lastDeath": [] } };
                 await dbServer.updatePlayRoom(roomID, updateData);
-                goStage(chatServer, dbServer, roomID, "cupid");
+                goStage(chatServer, dbServer, roomID, "cupid", [], autoNextStage);
                 return;
             }
             break;
@@ -203,6 +203,7 @@ async function goStage(chatServer, dbServer, roomID, stage, preSetup = []) {
             break;
     }
     await dbServer.updatePlayRoom(roomID, updateData, (playRoom) => {
+        if (!autoNextStage) return;
         let roleWin = gameIsEnd(playRoom);
         if (roleWin) {
             endGame(playRoom.roomChatID, dbServer, chatServer, roleWin);

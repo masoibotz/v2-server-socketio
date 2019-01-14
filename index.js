@@ -7,6 +7,7 @@ const chatServer = new ChatServer();
 const DBServer = require('./mongodb');
 const dbServer = new DBServer()
 const { randomRole, goStage, endGame } = require('./MaSoi');
+const { nextStageArr } = require('./Utils');
 
 const app = express()
 
@@ -61,6 +62,16 @@ app.get('/play/:roomID/start', async (req, res) => {
 		})
 	})
 })
+app.get('/play/:roomID/goStage', async (req, res) => {
+	const roomID = req.params.roomID;
+	const dayStage = req.query.stage;
+	await goStage(chatServer, dbServer, roomID, dayStage, [], false);
+	let resHtml = ``;
+	Object.keys(nextStageArr).map(stage => {
+		return resHtml += `<a href='/play/${roomID}/goStage?stage=${stage}'>${stage}</a> | `
+	})
+	res.status(200).send(resHtml)
+})
 app.get('/play/:roomID/do', (req, res) => {
 	const updateData = JSON.parse(req.query.action);
 	const roomID = req.params.roomID;
@@ -69,8 +80,11 @@ app.get('/play/:roomID/do', (req, res) => {
 })
 
 app.post('/reg', async (req, res) => {
-	const { id, name, avatar } = req.body;
+	var { id, name, avatar } = req.body;
 	console.log(`[+] REG for user: ${req.id}`);
+	if (avatar == "") {
+		avatar = "https://sites.google.com/site/masoibot/_/rsrc/1547470236714/user/user.png";
+	}
 	var ret = await chatServer.regNewUser(id, name, avatar);
 	await dbServer.newUser(id, name, avatar);
 	res.status(200).json(ret);

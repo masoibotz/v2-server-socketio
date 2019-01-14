@@ -27,7 +27,7 @@ module.exports = class ChatServer {
             } else if (err.error === 'services/chatkit/unprocessable_entity/validation_failed') {
                 ret = {
                     success: false,
-                    message: "Vui lòng nhập đủ tên đăng nhập và mã bí mật!"
+                    message: "Vui lòng cung cấp đủ tên đăng nhập, tên hiển thị và ảnh đại diện!"
                 }
             } else {
                 ret = {
