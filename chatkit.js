@@ -38,10 +38,13 @@ module.exports = class ChatServer {
         });
         return ret;
     }
-    async login(user_id) {
+    async auth(user_id) {
         return await chatkit.authenticate({
             userId: user_id
         });
+    }
+    login(userID) {
+        return chatkit.getUser({ id: userID });
     }
     leaveRoom(roomID, userIDs) {
         chatkit.removeUsersFromRoom({

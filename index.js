@@ -78,7 +78,25 @@ app.get('/play/:roomID/do', (req, res) => {
 	dbServer.updatePlayRoom(roomID, updateData);
 	res.status(200).json({ success: true });
 })
-
+app.get('/login', async (req, res) => {
+	const userID = req.query.user_id;
+	console.log(`[+] LOGIN for user: ${userID}`);
+	chatServer.login(userID).then(user => {
+		res.status(200).send({ success: true, data: user });
+	}).catch(err => {
+		let message;
+		if (err.error == "services/chatkit/not_found/user_not_found") {
+			message = "Tên đăng nhập không tồn tại!"
+		} else {
+			message = err.error ? err.error : "Lỗi không xác định!";
+		}
+		res.status(200).send({
+			success: false,
+			message: message
+		});
+		console.log(`Lỗi đăng nhập: ${err.error}`);
+	})
+})
 app.post('/reg', async (req, res) => {
 	var { id, name, avatar } = req.body;
 	console.log(`[+] REG for user: ${req.id}`);
@@ -90,8 +108,8 @@ app.post('/reg', async (req, res) => {
 	res.status(200).json(ret);
 })
 app.post('/auth', async (req, res) => {
-	console.log(`[+] LOGIN for user: ${req.query.user_id}`);
-	const authData = await chatServer.login(req.query.user_id);
+	console.log(`[+] AUTH for user: ${req.query.user_id}`);
+	const authData = await chatServer.auth(req.query.user_id);
 	res.status(authData.status).send(authData.body);
 })
 app.get('/chatRoom/:roomID', (req, res) => {
