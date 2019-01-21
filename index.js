@@ -209,5 +209,14 @@ app.get('/room', (req, res) => {
 		})
 	})
 })
+app.get("/app/update", (req, res) => {
+	console.log(`GET: /app/update`);
+	res.status(200).json({
+		version: "1.0.1a",
+		status: "beta",
+		releaseDate: "2019-01-21T09:02:40.581Z",
+		downloadLink: "http://bit.ly/masoiapk"
+	})
+})
 app.listen(process.env.PORT || 3001)
 console.log(`MA SÓI BOT Server đang chạy tại cổng ${process.env.PORT || 3001}...`)
