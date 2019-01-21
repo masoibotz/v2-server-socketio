@@ -55,11 +55,13 @@ module.exports = class ChatServer {
             .catch(err => console.error(err))
     }
     joinRoom(roomID, userID) {
-        chatkit.addUsersToRoom({
+        return chatkit.addUsersToRoom({
             roomId: roomID,
             userIds: [userID]
-        })
-            .then(() => console.log('user joined'))
+        }).then(() => console.log('user joined'))
+            .then(() => chatkit.getUser({ id: userID })
+                .catch(err => console.log("join_room_get_user_error:", err))
+            )
             .catch(err => console.error(err))
     }
     sendMessage(roomID, text) {

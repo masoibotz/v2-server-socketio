@@ -1,14 +1,14 @@
 const MongoClient = require('mongodb').MongoClient;
 module.exports = class DBServer {
     connectRoom(callback) {
-        MongoClient.connect('mongodb+srv://root:root@cluster0-7wmps.mongodb.net/test?retryWrites=true', { useNewUrlParser: true }, function (err, client) {
+        MongoClient.connect('mongodb+srv://admin:admin@cluster0-bkueo.mongodb.net/test?retryWrites=true', { useNewUrlParser: true }, function (err, client) {
             const collection = client.db("masoi").collection("room");
             callback(collection);
             client.close();
         });
     }
     connectUser(callback) {
-        MongoClient.connect('mongodb+srv://root:root@cluster0-7wmps.mongodb.net/test?retryWrites=true', { useNewUrlParser: true }, function (err, client) {
+        MongoClient.connect('mongodb+srv://admin:admin@cluster0-bkueo.mongodb.net/test?retryWrites=true', { useNewUrlParser: true }, function (err, client) {
             const collection = client.db("masoi").collection("user");
             callback(collection);
             client.close();
@@ -30,6 +30,20 @@ module.exports = class DBServer {
                 collection.findOne({ ...{ userID: userID }, ...params }, { projection: filter }, function (err, result) {
                     if (err) throw err;
                     resolve(result);
+                });
+            })
+        })
+    }
+    updateUser(userID, updateData, callback = () => { }) {
+        return new Promise((resolve, reject) => {
+            this.connectUser(collection => {
+                collection.findOneAndUpdate({ userID: userID }, {
+                    $set: updateData,
+                }, { returnOriginal: false }, function (err, res) {
+                    if (err) throw err;
+                    console.log(`Người ${userID}: Cập nhật `, updateData);
+                    callback(res.value);
+                    resolve(res.value);
                 });
             })
         })

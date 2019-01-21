@@ -101,10 +101,12 @@ app.post('/reg', async (req, res) => {
 	var { id, name, avatar } = req.body;
 	console.log(`[+] REG for user: ${req.id}`);
 	if (avatar == "") {
-		avatar = "https://sites.google.com/site/masoibot/_/rsrc/1547470236714/user/user.png";
+		avatar = "https://sites.google.com/site/masoibot/user/user.png";
 	}
 	var ret = await chatServer.regNewUser(id, name, avatar);
-	await dbServer.newUser(id, name, avatar);
+	if (ret.success) {
+		await dbServer.newUser(id, name, avatar);
+	}
 	res.status(200).json(ret);
 })
 app.post('/auth', async (req, res) => {
@@ -150,8 +152,14 @@ app.get('/play/:roomID/join/:userID', async (req, res) => {
 	console.log(`GET: /play/${roomID}/join/${userID}`);
 	await dbServer.getPlayRoom(roomID, { _id: 0, "state.status": 1, "players.ready": 1 }).then(playRoom => {
 		if (playRoom.state.status === "waiting") {
-			chatServer.joinRoom(roomID, userID);
-			res.status(200).json({ success: true, ready: playRoom.players.ready });
+			chatServer.joinRoom(roomID, userID).then(user => {
+				dbServer.updatePlayRoom(roomID, {
+					[`players.ready.${userID}`]: !!playRoom.players.ready[userID],
+					[`players.names.${userID}`]: user.name
+				}).then(data => {
+					res.status(200).json({ success: true, ready: data.players.ready, names: data.players.names });
+				})
+			})
 		} else {
 			res.status(200).json({ success: false });
 		}
@@ -195,7 +203,7 @@ app.get('/room/:roomID/status', (req, res) => {
 app.get('/room', (req, res) => {
 	console.log(`GET: /room/`);
 	dbServer.connectRoom((collection) => {
-		collection.find({}, { projection: { _id: 0, roomChatID: 1, hostUserID: 1, "state.status": 1, "players.ready": 1 } }).toArray(function (err, result) {
+		collection.find({}, { projection: { _id: 0, roomChatID: 1, hostUserID: 1, state: 1, "players.ready": 1 } }).toArray(function (err, result) {
 			if (err) throw err;
 			res.status(200).json(result)
 		})
