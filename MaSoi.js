@@ -71,7 +71,7 @@ async function goStage(chatServer, dbServer, roomID, stage, preSetup = [], autoN
                 ...updateData, ...{
                     "roleTarget.voteList": {},
                     "roleInfo.victimID": "", "state.day": playRoom.state.day + 1,
-                    logs: [...playRoom.logs, `ĐÊM THỨ ${playRoom.state.day + 1}\n`]
+                    logs: [...playRoom.logs, `ĐÊM THỨ ${playRoom.state.day + 1}`]
                 }
             }
             // Thiên sứ thành dân vào ngày thứ 2
@@ -106,13 +106,13 @@ async function goStage(chatServer, dbServer, roomID, stage, preSetup = [], autoN
         case 'superwolf': //after_night
             var mostVotedUser = mostVoted(playRoom);
             let newlog = [];
-            playRoom.roleTarget.seeID ? newlog = [...newlog, `Tiên tri soi ${names[playRoom.roleTarget.seeID]}`] : null;
-            playRoom.roleTarget.saveID ? newlog = [...newlog, `Bảo vệ cho ${names[playRoom.roleTarget.saveID]}`] : null;
+            playRoom.roleTarget.seeID ? newlog = [...newlog, `Tiên tri soi ${names[playRoom.roleTarget.seeID]}`] : [];
+            playRoom.roleTarget.saveID ? newlog = [...newlog, `Bảo vệ cho ${names[playRoom.roleTarget.saveID]}`] : [];
             updateData = {
                 ...updateData, ...{
                     "roleInfo.victimID": mostVotedUser,
                     "roleTarget.voteList": {},
-                    logs: [...playRoom.logs, newlog]
+                    logs: [...playRoom.logs, ...newlog]
                 }
             };
             // kiểm tra có sói nguyền không nếu không thì bỏ qua
@@ -238,7 +238,7 @@ function endGame(roomID, dbServer, chatServer, roleWin) {
     // setTimeout(() => { roomSchedule[roomID] = null; }, 5000);
     let updateData = { ...defaultGameData, ...{ "state.status": "waiting", "state.dayStage": "endGame", roleWin: roleWin } }
     dbServer.updatePlayRoom(roomID, updateData, (playRoom) => {
-        chatServer.sendMessage(roomID, ["TÓM TẮT GAME", ...playRoom.logs].join('\n'));
+        chatServer.sendMessage(roomID, ["TRÒ CHƠI ĐÃ KẾT THÚC", `${phe[roleWin]} thắng`, ...playRoom.logs].join('\n'));
         chatServer.sendAction(roomID, 'endGame', playRoom);
     })
 }
