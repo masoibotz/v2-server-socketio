@@ -44,7 +44,7 @@ app.get('/play/:roomID/start', async (req, res) => {
 			return;
 		}
 		let numNeadyPlayer = Object.values(playRoom.players.ready).filter(p => p).length;
-		if (numNeadyPlayer <= 3 || numNeadyPlayer >= 11) {
+		if (numNeadyPlayer <= 3 || numNeadyPlayer >= 12) {
 			res.status(200).json({ success: false, message: 'Số lượng người chơi không hợp lệ!' });
 			return;
 		}
@@ -217,9 +217,9 @@ app.get('/room', (req, res) => {
 app.get("/app/update", (req, res) => {
 	console.log(`GET: /app/update`);
 	res.status(200).json({
-		version: "1.0.1b",
+		version: "1.0.1c",
 		status: "beta",
-		releaseDate: "2019-01-22T04:54:03.327Z",
+		releaseDate: "2019-01-22T17:15:13.182Z",
 		changeLog: "Sửa lỗi và thêm tính năng mới!",
 		downloadLink: "http://bit.ly/masoiapk"
 	})
