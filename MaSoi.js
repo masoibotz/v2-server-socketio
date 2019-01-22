@@ -10,7 +10,7 @@ function randomRole(chatServer, dbServer, playRoom, roomID, customSetup) {
     }).then(readyUser => {
         console.log(`Phòng ${roomID}: SETUP cho ${readyUser.length} NGƯỜI`);
         if (readyUser.length <= 3 || readyUser.length >= 12) {
-            this.endGame(roomID, dbServer, chatServer, 0);
+            endGame(roomID, dbServer, chatServer, 0);
             return;
         }
 
