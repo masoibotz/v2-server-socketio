@@ -212,9 +212,9 @@ app.get('/room', (req, res) => {
 app.get("/app/update", (req, res) => {
 	console.log(`GET: /app/update`);
 	res.status(200).json({
-		version: "1.0.1a",
+		version: "1.0.1b",
 		status: "beta",
-		releaseDate: "2019-01-21T09:02:40.581Z",
+		releaseDate: "2019-01-22T04:54:03.327Z",
 		downloadLink: "http://bit.ly/masoiapk"
 	})
 })
