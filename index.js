@@ -43,6 +43,11 @@ app.get('/play/:roomID/start', async (req, res) => {
 			res.status(200).json({ success: false, message: 'Game already started!' });
 			return;
 		}
+		let numNeadyPlayer = Object.values(playRoom.players.ready).filter(p => p).length;
+		if (numNeadyPlayer <= 3 || numNeadyPlayer >= 11) {
+			res.status(200).json({ success: false, message: 'Số lượng người chơi không hợp lệ!' });
+			return;
+		}
 		await chatServer.getUserFromChatRoom(roomID).then(users => {
 			let notReadyPlayers = [];
 			users.forEach((user) => {
