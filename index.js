@@ -215,6 +215,7 @@ app.get("/app/update", (req, res) => {
 		version: "1.0.1b",
 		status: "beta",
 		releaseDate: "2019-01-22T04:54:03.327Z",
+		changeLog: "Sửa lỗi và thêm tính năng mới!",
 		downloadLink: "http://bit.ly/masoiapk"
 	})
 })

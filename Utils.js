@@ -29,6 +29,7 @@ const phe = {
     "3": "Cặp đôi",
     "-1": "Sói",
     "1": "DÂN",
+    "0": "HÒA"
 }
 const roleName = {
     // PHE SÓI

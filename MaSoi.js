@@ -2,13 +2,17 @@ var schedule = require('node-schedule')
 const { defaultGameData, nextStageArr, phe, roleName, shuffleArray, stageTimeoutArr, roleSetup, random } = require('./Utils');
 
 var roomSchedule = [];
-function randomRole(chatServer, playRoom, roomID, customSetup) {
+function randomRole(chatServer, dbServer, playRoom, roomID, customSetup) {
     return chatServer.getUserFromChatRoom(roomID).then(users => {
         return users.filter(u => {
             return playRoom.players.ready[u.id];
         });
     }).then(readyUser => {
-        console.log(`Phòng ${roomID}: Đã SETUP XONG cho ${readyUser.length} NGƯỜI`);
+        console.log(`Phòng ${roomID}: SETUP cho ${readyUser.length} NGƯỜI`);
+        if (readyUser.length <= 3 || readyUser.length >= 12) {
+            this.endGame(roomID, dbServer, chatServer, 0);
+            return;
+        }
 
         var setup = { "-3": [], "-2": [], "-1": [], "1": [], "2": [], "3": [], "4": [], "5": [], "6": [], "7": [], "8": [], "9": [] };
         var allID = [], villagersID = [], wolfsID = [], playersName = {};
@@ -56,7 +60,7 @@ async function goStage(chatServer, dbServer, roomID, stage, preSetup = [], autoN
         case 'readyToGame':
             roomSchedule[roomID] = null;
             //random role and reset room data
-            await randomRole(chatServer, playRoom, roomID, preSetup).then(randomData => {
+            await randomRole(chatServer, dbServer, playRoom, roomID, preSetup).then(randomData => {
                 updateData = {
                     ...updateData, ...randomData, ...defaultGameData, ...{
                         logs: [],
