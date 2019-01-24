@@ -67,6 +67,17 @@ app.get('/play/:roomID/start', async (req, res) => {
 		})
 	})
 })
+app.get('/room/:roomID/messages', (req, res) => {
+	const roomID = req.params.roomID;
+	const limit = req.query.limit;
+	const startBy = req.query.from;
+	const direction = req.query.direction;
+	console.log(`GET /room/${roomID}/messages/`);
+	chatServer.getMessages(roomID, limit ? limit : 20, startBy ? startBy : null, direction ? direction : "older").then(messages => {
+		res.status(200).json({ success: true, roomID: roomID, messages: messages });
+	})
+
+})
 app.get('/play/:roomID/goStage', async (req, res) => {
 	const roomID = req.params.roomID;
 	const dayStage = req.query.stage;

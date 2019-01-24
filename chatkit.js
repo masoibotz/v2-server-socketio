@@ -99,6 +99,18 @@ module.exports = class ChatServer {
             })
         })
     }
+    getMessages(roomID, limit, startMessageID = null, direction = "older") {
+        var queryObject = {
+            roomId: roomID, limit: limit,
+            direction: direction
+        };
+        if (startMessageID) {
+            queryObject = { ...queryObject, initialId: startMessageID }
+        }
+        return chatkit.getRoomMessages(queryObject).then(messages => {
+            return messages.filter(m => (m.text[0] != "{"));
+        }).catch(err => console.error(err))
+    }
     async ready(userID, readyOrNot) {
         var ret = {
             success: false,
