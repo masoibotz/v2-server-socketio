@@ -1,4 +1,4 @@
-const express = require('express')
+﻿const express = require('express')
 const bodyParser = require('body-parser')
 const cors = require('cors')
 
@@ -228,9 +228,9 @@ app.get('/room', (req, res) => {
 app.get("/app/update", (req, res) => {
 	console.log(`GET: /app/update`);
 	res.status(200).json({
-		version: "1.0.1c",
+		version: "1.0.1d",
 		status: "beta",
-		releaseDate: "2019-01-22T17:15:13.182Z",
+		releaseDate: "2019-01-25T15:34:49.556Z",
 		changeLog: "Sửa lỗi và thêm tính năng mới!",
 		downloadLink: "http://bit.ly/masoiapk"
 	})

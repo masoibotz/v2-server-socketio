@@ -4,7 +4,7 @@
     "night": 35 * 1000,
     "superwolf": 10 * 1000,
     "witch": 15 * 1000,
-    "discuss": 30 * 1000,
+    "discuss": 3 * 60 * 1000,
     "vote": 15 * 1000,
     "voteResult": 10 * 1000,
     "lastWord": 1 * 60 * 1000,
