@@ -1,5 +1,6 @@
 var schedule = require('node-schedule')
 const { defaultGameData, nextStageArr, phe, roleName, shuffleArray, stageTimeoutArr, roleSetup, random } = require('./Utils');
+const stageActionText = require("./clientUtils");
 
 var roomSchedule = [];
 function randomRole(chatServer, dbServer, playRoom, roomID, customSetup) {
@@ -86,7 +87,7 @@ async function goStage(chatServer, dbServer, roomID, stage, preSetup = [], autoN
             if (playRoom.setup[7].length == 0) {
                 console.log(`<<<<<<<<<<<<<<<< Phòng ${roomID}: goStage ${stage} <<<<<<<<<<<<<<<<`);
                 await dbServer.updatePlayRoom(roomID, updateData);
-                goStage(chatServer, dbServer, roomID, nextStageArr[stage], [], autoNextStage);
+                await goStage(chatServer, dbServer, roomID, nextStageArr[stage], [], autoNextStage);
                 return;
             }
             break;
@@ -123,7 +124,7 @@ async function goStage(chatServer, dbServer, roomID, stage, preSetup = [], autoN
             if (playRoom.setup[-3].length == 0) {
                 console.log(`<<<<<<<<<<<<<<<< Phòng ${roomID}: goStage ${stage} <<<<<<<<<<<<<<<<`);
                 await dbServer.updatePlayRoom(roomID, updateData);
-                goStage(chatServer, dbServer, roomID, nextStageArr[stage], [], autoNextStage);
+                await goStage(chatServer, dbServer, roomID, nextStageArr[stage], [], autoNextStage);
                 return;
             }
             break;
@@ -151,7 +152,7 @@ async function goStage(chatServer, dbServer, roomID, stage, preSetup = [], autoN
             if (playRoom.setup[5].length == 0 || ((victimID === "" || !playRoom.roleInfo.witchSaveRemain) && !playRoom.roleInfo.witchKillRemain)) {
                 console.log(`<<<<<<<<<<<<<<<< Phòng ${roomID}: goStage ${stage} <<<<<<<<<<<<<<<<`);
                 await dbServer.updatePlayRoom(roomID, updateData);
-                goStage(chatServer, dbServer, roomID, nextStageArr[stage], [], autoNextStage);
+                await goStage(chatServer, dbServer, roomID, nextStageArr[stage], [], autoNextStage);
                 return;
             }
             break;
@@ -193,7 +194,7 @@ async function goStage(chatServer, dbServer, roomID, stage, preSetup = [], autoN
                 console.log(`<<<<<<<<<<<<<<<< Phòng ${roomID}: goStage ${stage} <<<<<<<<<<<<<<<< EQUALS VOTE`);
                 updateData = { ...updateData, ...{ "roleInfo.lastDeath": [] } };
                 await dbServer.updatePlayRoom(roomID, updateData);
-                goStage(chatServer, dbServer, roomID, "cupid", [], autoNextStage);
+                await goStage(chatServer, dbServer, roomID, "cupid", [], autoNextStage);
                 return;
             }
             break;
@@ -218,7 +219,8 @@ async function goStage(chatServer, dbServer, roomID, stage, preSetup = [], autoN
         if (stage === 'readyToGame' || stage === 'discuss') {
             updateFlags = "loadRole";
         }
-        chatServer.sendAction(roomID, updateFlags, playRoom);
+        var actionText = stageActionText(playRoom);
+        chatServer.sendAction(roomID, playRoom, updateFlags, actionText);
 
         //next stage
         if (stage != "endGame") {
@@ -242,8 +244,8 @@ function endGame(roomID, dbServer, chatServer, roleWin) {
     // setTimeout(() => { roomSchedule[roomID] = null; }, 5000);
     let updateData = { ...defaultGameData, ...{ "state.status": "waiting", "state.dayStage": "endGame", roleWin: roleWin } }
     dbServer.updatePlayRoom(roomID, updateData, (playRoom) => {
-        chatServer.sendMessage(roomID, ["TRÒ CHƠI ĐÃ KẾT THÚC", `${phe[roleWin]} thắng`, ...playRoom.logs].join('\n'));
-        chatServer.sendAction(roomID, 'endGame', playRoom);
+        // chatServer.sendMessage(roomID, ["TRÒ CHƠI ĐÃ KẾT THÚC", `${phe[roleWin]} thắng`, ...playRoom.logs].join('\n'));
+        chatServer.sendAction(roomID, playRoom, 'endGame', ["TRÒ CHƠI ĐÃ KẾT THÚC", `${phe[roleWin]} thắng`, ...playRoom.logs].join('\n'));
     })
 }
 //done
@@ -332,7 +334,6 @@ async function KillVictim(chatServer, dbServer, playRoom, isNight, updateDataCal
             // bắn xong, dù đúng hay sai bạn về dân nhé :v
             "setup.3": deleteFromArray(playRoom.setup["3"], hunterID),
             "setup.4": [...playRoom.setup["4"], hunterID],
-            "roleInfo.hunterID": "",
             "roleTarget.fireID": "",
             "roleTarget.fireToKill": false
         }
@@ -484,10 +485,10 @@ function voteYesNo(playRoom) {
 }
 function gameIsEnd(playRoom) {
     console.log(`Phòng ${playRoom.roomChatID}: Game check: ${playRoom.players.wolfsID.length} SÓI / ${playRoom.players.villagersID.length} DÂN `);
-    if (this.thienSuWin) {
+    if (playRoom.roleInfo.angelWin) {
         // thiên sứ thắng
         return 9;
-    } else if (playRoom.hasCouple && playRoom.players.wolfsID.length + playRoom.players.villagersID.length == 2 && playRoom.players.wolfsID.length > 0) {
+    } else if (playRoom.roleInfo.hasCouple && playRoom.players.wolfsID.length + playRoom.players.villagersID.length == 2 && playRoom.players.wolfsID.length > 0) {
         // cặp đôi thắng
         return 3;
     } else if (playRoom.players.wolfsID.length >= playRoom.players.villagersID.length) {

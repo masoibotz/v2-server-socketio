@@ -65,7 +65,7 @@ module.exports = class DBServer {
                     $set: updateData,
                 }, { returnOriginal: false }, function (err, res) {
                     if (err) throw err;
-                    console.log(`Phòng ${roomID}: Cập nhật `, updateData);
+                    console.log(`Phòng ${roomID}: Cập nhật `);
                     callback(res.value);
                     resolve(res.value);
                 });

@@ -73,10 +73,10 @@ module.exports = class ChatServer {
             .then(res => console.log('bot send'))
             .catch(err => console.error(err))
     }
-    sendAction(roomID, actionName, data = {}) {
+    sendAction(roomID, data = {}, actionName = "", actionText = "") {
         this.sendMessage(roomID, JSON.stringify({
             action: actionName,
-            text: `${actionName}`,
+            text: `${actionText}`,
             data: data
         }))
     }

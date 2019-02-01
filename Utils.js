@@ -49,6 +49,19 @@ const roleName = {
     "9": '🧚‍THIÊN SỨ', //done
 }
 const defaultGameData = {
+    "setup.-3": "",
+    "setup.-2": "",
+    "setup.-1": "",
+    "setup.1": "",
+    "setup.2": "",
+    "setup.3": "",
+    "setup.4": "",
+    "setup.5": "",
+    "setup.6": "",
+    "setup.7": "",
+    "setup.8": "",
+    "setup.9": "",
+
     "state.day": 0,
     "players.coupleID": [],
 

@@ -177,7 +177,8 @@ app.get('/play/:roomID/join/:userID', async (req, res) => {
 				})
 			})
 		} else {
-			res.status(200).json({ success: false });
+			chatServer.joinRoom(roomID, userID);
+			res.status(200).json({ success: false, message: "Phòng đang chơi, vui lòng không làm phiền!" });
 		}
 	})
 })
@@ -228,9 +229,9 @@ app.get('/room', (req, res) => {
 app.get("/app/update", (req, res) => {
 	console.log(`GET: /app/update`);
 	res.status(200).json({
-		version: "1.0.1d",
+		version: "1.0.1e",
 		status: "beta",
-		releaseDate: "2019-01-25T15:34:49.556Z",
+		releaseDate: "2019-01-29T10:27:16.475Z",
 		changeLog: "Sửa lỗi và thêm tính năng mới!",
 		downloadLink: "http://bit.ly/masoiapk"
 	})
