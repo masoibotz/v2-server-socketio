@@ -166,8 +166,8 @@ app.get('/play/:roomID/join/:userID', async (req, res) => {
 	const roomID = req.params.roomID;
 	const userID = req.params.userID;
 	console.log(`GET: /play/${roomID}/join/${userID}`);
-	await dbServer.getPlayRoom(roomID, { _id: 0, "state.status": 1, "players.ready": 1 }).then(playRoom => {
-		if (playRoom.state.status === "waiting") {
+	await dbServer.getPlayRoom(roomID, { _id: 0, "state.status": 1, "players.ready": 1, "players.allID": 1 }).then(playRoom => {
+		if (playRoom.state.status === "waiting" || playRoom.players.allID.indexOf(userID) != -1) {
 			chatServer.joinRoom(roomID, userID).then(user => {
 				dbServer.updatePlayRoom(roomID, {
 					[`players.ready.${userID}`]: !!playRoom.players.ready[userID],
@@ -229,10 +229,10 @@ app.get('/room', (req, res) => {
 app.get("/app/update", (req, res) => {
 	console.log(`GET: /app/update`);
 	res.status(200).json({
-		version: "1.0.1e",
-		status: "beta",
-		releaseDate: "2019-01-29T10:27:16.475Z",
-		changeLog: "Sửa lỗi và thêm tính năng mới!",
+		version: "1.0.1f_rc1",
+		status: "release",
+		releaseDate: "2019-02-01T11:47:06.238Z",
+		changeLog: "Fix tỉ bug :v ra mắt bản Release đầu tiên",
 		downloadLink: "http://bit.ly/masoiapk"
 	})
 })
