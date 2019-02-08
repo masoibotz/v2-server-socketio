@@ -4,7 +4,10 @@ const ChatServer = require('../chatkit');
 const DBServer = require('../mongodb');
 
 const { postRequest, sendRequest } = require('./request');
-const { defaultGameData } = require('../Utils');
+const { defaultGameData, defaultSetup } = require('../Utils');
+
+const defaultTestData = { ...defaultGameData, ...defaultSetup };
+
 
 const roomID = "26851162";
 
@@ -15,7 +18,7 @@ describe('#3 THỢ SĂN test: duy1 là thợ săn', function () {
         this.timeout(100000);
         it('#3.1 Thợ săn duy1 (bị cắn) bị động ghim duy2!', function () {
             return dbServer.updatePlayRoom(roomID, {
-                ...defaultGameData, ...{
+                ...defaultTestData, ...{
                     "setup.3": ["duy1"],
                     "roleTarget.fireToKill": false,
                     "roleTarget.fireID": "duy2",
@@ -33,7 +36,7 @@ describe('#3 THỢ SĂN test: duy1 là thợ săn', function () {
         });
         it('#3.2.1 Thợ săn duy1 (bị cắn) chủ động ghim duy2, duy2 là sói, thợ săn về DÂN, sói chết!', function () {
             return dbServer.updatePlayRoom(roomID, {
-                ...defaultGameData, ...{
+                ...defaultTestData, ...{
                     "setup.3": ["duy1"],
                     "setup.-1": ["duy2"],
                     "players.wolfsID": ["duy2"],
@@ -53,7 +56,7 @@ describe('#3 THỢ SĂN test: duy1 là thợ săn', function () {
         });
         it('#3.2.2 Thợ săn duy1 (bị cắn) chủ động ghim duy3, duy3 là DÂN, cả 2 đều chết!', function () {
             return dbServer.updatePlayRoom(roomID, {
-                ...defaultGameData, ...{
+                ...defaultTestData, ...{
                     "setup.3": ["duy1"],
                     "setup.4": ["duy3"],
                     "players.villagersID": ["duy3"],
@@ -76,7 +79,7 @@ describe('#3 THỢ SĂN test: duy1 là thợ săn', function () {
         this.timeout(100000);
         it('#3.2.1 Thợ săn duy1 (không bị cắn) chủ động ghim duy2, duy2 là sói, thợ săn về DÂN, sói chết!', function () {
             return dbServer.updatePlayRoom(roomID, {
-                ...defaultGameData, ...{
+                ...defaultTestData, ...{
                     "setup.3": ["duy1"],
                     "setup.-1": ["duy2"],
                     "players.wolfsID": ["duy2"],
@@ -97,7 +100,7 @@ describe('#3 THỢ SĂN test: duy1 là thợ săn', function () {
         });
         it('#3.2.2 Thợ săn (không bị cắn) duy1 chủ động ghim duy3, duy3 là DÂN, cả 2 đều chết!', function () {
             return dbServer.updatePlayRoom(roomID, {
-                ...defaultGameData, ...{
+                ...defaultTestData, ...{
                     "setup.3": ["duy1"],
                     "setup.4": ["duy3"],
                     "players.villagersID": ["duy3"],
@@ -120,7 +123,7 @@ describe('#3 THỢ SĂN test: duy1 là thợ săn', function () {
         this.timeout(100000);
         it('#3.3.1 bị động ghim bản thân', function () {
             return dbServer.updatePlayRoom(roomID, {
-                ...defaultGameData, ...{
+                ...defaultTestData, ...{
                     "setup.3": ["duy1"],
                     "roleTarget.fireID": "duy1",
                     "roleTarget.fireToKill": true,
@@ -137,7 +140,7 @@ describe('#3 THỢ SĂN test: duy1 là thợ săn', function () {
         });
         it('#3.3.2 chủ động ghim chính mình', function () {
             return dbServer.updatePlayRoom(roomID, {
-                ...defaultGameData, ...{
+                ...defaultTestData, ...{
                     "setup.3": ["duy1"],
                     "roleTarget.fireID": "duy1",
                     "roleTarget.fireToKill": true,

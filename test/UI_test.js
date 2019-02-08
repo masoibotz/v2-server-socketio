@@ -3,17 +3,20 @@ const ChatServer = require('../chatkit');
 const DBServer = require('../mongodb');
 
 const { postRequest, sendRequest } = require('./request');
-const { defaultGameData } = require('../Utils');
+const { defaultGameData, defaultSetup } = require('../Utils');
+
+const defaultTestData = { ...defaultGameData, ...defaultSetup };
+
 
 const roomID = "26851162";
 
 describe('#ui stageTest', function () {
     const chatServer = new ChatServer();
     const dbServer = new DBServer();
-    this.timeout(100000);
+    this.timeout(1000000);
     it('#reset', function () {
         return dbServer.updatePlayRoom(roomID, {
-            ...defaultGameData, ...{
+            ...defaultTestData, ...{
                 "state.status": "waiting",
                 "logs": [],
             }
@@ -23,7 +26,7 @@ describe('#ui stageTest', function () {
     });
     it('#cupid', function () {
         return dbServer.updatePlayRoom(roomID, {
-            ...defaultGameData, ...{
+            ...defaultTestData, ...{
                 "state.status": 'ingame',
                 "state.dayStage": "readyToGame",
                 "setup.7": ["duy1", "duy2", "duy3", "duy4", "duy5", "duy6"],
@@ -34,7 +37,7 @@ describe('#ui stageTest', function () {
         }).then(data => {
             return dbServer.updatePlayRoom(roomID, {
                 "state.dayStage": "cupid",
-                "state.stageEnd": new Date(Date.now() + 10000).toISOString(),
+                "state.stageEnd": new Date(Date.now() + 100000).toISOString(),
             })
         }).then(data => {
             return chatServer.sendAction(roomID, data);
@@ -42,7 +45,7 @@ describe('#ui stageTest', function () {
     });
     it('#night1-6', function () {
         return dbServer.updatePlayRoom(roomID, {
-            ...defaultGameData, ...{
+            ...defaultTestData, ...{
                 "state.status": 'ingame',
                 "state.dayStage": "readyToGame",
                 "setup.1": ["duy1"],
@@ -58,7 +61,7 @@ describe('#ui stageTest', function () {
         }).then(data => {
             return dbServer.updatePlayRoom(roomID, {
                 "state.dayStage": "night",
-                "state.stageEnd": new Date(Date.now() + 10000).toISOString(),
+                "state.stageEnd": new Date(Date.now() + 100000).toISOString(),
             })
         }).then(data => {
             return chatServer.sendAction(roomID, data);
@@ -66,7 +69,7 @@ describe('#ui stageTest', function () {
     });
     it('#night7-9-3-1', function () {
         return dbServer.updatePlayRoom(roomID, {
-            ...defaultGameData, ...{
+            ...defaultTestData, ...{
                 "state.status": 'ingame',
                 "state.dayStage": "readyToGame",
                 "setup.7": ["duy1"],
@@ -83,7 +86,7 @@ describe('#ui stageTest', function () {
         }).then(data => {
             return dbServer.updatePlayRoom(roomID, {
                 "state.dayStage": "night",
-                "state.stageEnd": new Date(Date.now() + 10000).toISOString(),
+                "state.stageEnd": new Date(Date.now() + 100000).toISOString(),
             })
         }).then(data => {
             return chatServer.sendAction(roomID, data);
@@ -91,7 +94,7 @@ describe('#ui stageTest', function () {
     });
     it('#superwolf1:duy1 victim:duy2', function () {
         return dbServer.updatePlayRoom(roomID, {
-            ...defaultGameData, ...{
+            ...defaultTestData, ...{
                 "state.status": 'ingame',
                 "state.dayStage": "readyToGame",
                 "setup.-3": ["duy1", "duy2", "duy3", "duy4", "duy5"],
@@ -104,7 +107,7 @@ describe('#ui stageTest', function () {
             return dbServer.updatePlayRoom(roomID, {
                 "state.dayStage": "superwolf",
                 "roleInfo.victimID": "duy2",
-                "state.stageEnd": new Date(Date.now() + 10000).toISOString(),
+                "state.stageEnd": new Date(Date.now() + 100000).toISOString(),
             })
         }).then(data => {
             return chatServer.sendAction(roomID, data);
@@ -112,7 +115,7 @@ describe('#ui stageTest', function () {
     });
     it('#superwolf2:duy1 victim:null', function () {
         return dbServer.updatePlayRoom(roomID, {
-            ...defaultGameData, ...{
+            ...defaultTestData, ...{
                 "state.status": 'ingame',
                 "state.dayStage": "readyToGame",
                 "setup.-3": ["duy1", "duy2", "duy3", "duy4", "duy5"],
@@ -124,7 +127,7 @@ describe('#ui stageTest', function () {
         }).then(data => {
             return dbServer.updatePlayRoom(roomID, {
                 "state.dayStage": "superwolf",
-                "state.stageEnd": new Date(Date.now() + 10000).toISOString(),
+                "state.stageEnd": new Date(Date.now() + 100000).toISOString(),
             })
         }).then(data => {
             return chatServer.sendAction(roomID, data);
@@ -132,7 +135,7 @@ describe('#ui stageTest', function () {
     });
     it('#superwolf3:duy1 doneSuperwolf', function () {
         return dbServer.updatePlayRoom(roomID, {
-            ...defaultGameData, ...{
+            ...defaultTestData, ...{
                 "state.status": 'ingame',
                 "state.dayStage": "readyToGame",
                 "setup.-3": ["duy1", "duy2", "duy3", "duy4", "duy5"],
@@ -146,7 +149,7 @@ describe('#ui stageTest', function () {
         }).then(data => {
             return dbServer.updatePlayRoom(roomID, {
                 "state.dayStage": "superwolf",
-                "state.stageEnd": new Date(Date.now() + 10000).toISOString(),
+                "state.stageEnd": new Date(Date.now() + 100000).toISOString(),
             })
         }).then(data => {
             return chatServer.sendAction(roomID, data);
@@ -154,7 +157,7 @@ describe('#ui stageTest', function () {
     });
     it('#witch1:victim victim:duy1', function () {
         return dbServer.updatePlayRoom(roomID, {
-            ...defaultGameData, ...{
+            ...defaultTestData, ...{
                 "state.status": 'ingame',
                 "state.dayStage": "readyToGame",
                 "setup.5": ["duy1", "duy2", "duy3", "duy4", "duy5"],
@@ -167,7 +170,7 @@ describe('#ui stageTest', function () {
             return dbServer.updatePlayRoom(roomID, {
                 "state.dayStage": "witch",
                 "roleInfo.victimID": "duy1",
-                "state.stageEnd": new Date(Date.now() + 10000).toISOString(),
+                "state.stageEnd": new Date(Date.now() + 100000).toISOString(),
             })
         }).then(data => {
             return chatServer.sendAction(roomID, data);
@@ -175,7 +178,7 @@ describe('#ui stageTest', function () {
     });
     it('#witch2:no-victim victim:null', function () {
         return dbServer.updatePlayRoom(roomID, {
-            ...defaultGameData, ...{
+            ...defaultTestData, ...{
                 "state.status": 'ingame',
                 "state.dayStage": "readyToGame",
                 "setup.5": ["duy1", "duy2", "duy3", "duy4", "duy5"],
@@ -187,7 +190,7 @@ describe('#ui stageTest', function () {
         }).then(data => {
             return dbServer.updatePlayRoom(roomID, {
                 "state.dayStage": "witch",
-                "state.stageEnd": new Date(Date.now() + 10000).toISOString(),
+                "state.stageEnd": new Date(Date.now() + 100000).toISOString(),
             })
         }).then(data => {
             return chatServer.sendAction(roomID, data);
@@ -195,7 +198,7 @@ describe('#ui stageTest', function () {
     });
     it('#witch3:no-save victim:duy1', function () {
         return dbServer.updatePlayRoom(roomID, {
-            ...defaultGameData, ...{
+            ...defaultTestData, ...{
                 "state.status": 'ingame',
                 "state.dayStage": "readyToGame",
                 "setup.5": ["duy1", "duy2", "duy3", "duy4", "duy5"],
@@ -209,7 +212,7 @@ describe('#ui stageTest', function () {
             return dbServer.updatePlayRoom(roomID, {
                 "state.dayStage": "witch",
                 "roleInfo.victimID": "duy1",
-                "state.stageEnd": new Date(Date.now() + 10000).toISOString(),
+                "state.stageEnd": new Date(Date.now() + 100000).toISOString(),
             })
         }).then(data => {
             return chatServer.sendAction(roomID, data);
@@ -217,7 +220,7 @@ describe('#ui stageTest', function () {
     });
     it('#witch4:no-kill victim:duy1', function () {
         return dbServer.updatePlayRoom(roomID, {
-            ...defaultGameData, ...{
+            ...defaultTestData, ...{
                 "state.status": 'ingame',
                 "state.dayStage": "readyToGame",
                 "setup.5": ["duy1", "duy2", "duy3", "duy4", "duy5"],
@@ -231,7 +234,7 @@ describe('#ui stageTest', function () {
             return dbServer.updatePlayRoom(roomID, {
                 "state.dayStage": "witch",
                 "roleInfo.victimID": "duy1",
-                "state.stageEnd": new Date(Date.now() + 10000).toISOString(),
+                "state.stageEnd": new Date(Date.now() + 100000).toISOString(),
             })
         }).then(data => {
             return chatServer.sendAction(roomID, data);
@@ -239,7 +242,7 @@ describe('#ui stageTest', function () {
     });
     it('#witch5:no-save/no-kill victim:duy1', function () {
         return dbServer.updatePlayRoom(roomID, {
-            ...defaultGameData, ...{
+            ...defaultTestData, ...{
                 "state.status": 'ingame',
                 "state.dayStage": "readyToGame",
                 "setup.5": ["duy1", "duy2", "duy3", "duy4", "duy5"],
@@ -254,7 +257,7 @@ describe('#ui stageTest', function () {
             return dbServer.updatePlayRoom(roomID, {
                 "state.dayStage": "witch",
                 "roleInfo.victimID": "duy1",
-                "state.stageEnd": new Date(Date.now() + 10000).toISOString(),
+                "state.stageEnd": new Date(Date.now() + 100000).toISOString(),
             })
         }).then(data => {
             return chatServer.sendAction(roomID, data);
@@ -262,7 +265,7 @@ describe('#ui stageTest', function () {
     });
     it('#discuss victim:duy1 lastDeath[duy4,duy5,duy6]', function () {
         return dbServer.updatePlayRoom(roomID, {
-            ...defaultGameData, ...{
+            ...defaultTestData, ...{
                 "state.status": 'ingame',
                 "state.dayStage": "readyToGame",
                 "setup.5": ["duy1", "duy2", "duy3", "duy4", "duy5"],
@@ -276,7 +279,7 @@ describe('#ui stageTest', function () {
                 "roleInfo.victimID": "duy1",
                 "roleInfo.lastDeath": ["duy4", "duy5", "duy6"],
                 "roleInfo.deathList": ["duy4", "duy5", "duy6"],
-                "state.stageEnd": new Date(Date.now() + 10000).toISOString(),
+                "state.stageEnd": new Date(Date.now() + 100000).toISOString(),
             })
         }).then(data => {
             return chatServer.sendAction(roomID, data);
@@ -284,7 +287,7 @@ describe('#ui stageTest', function () {
     });
     it('#vote1', function () {
         return dbServer.updatePlayRoom(roomID, {
-            ...defaultGameData, ...{
+            ...defaultTestData, ...{
                 "state.status": 'ingame',
                 "state.dayStage": "readyToGame",
                 "setup.4": ["duy1", "duy2", "duy3"],
@@ -296,7 +299,7 @@ describe('#ui stageTest', function () {
         }).then(data => {
             return dbServer.updatePlayRoom(roomID, {
                 "state.dayStage": "vote",
-                "state.stageEnd": new Date(Date.now() + 10000).toISOString(),
+                "state.stageEnd": new Date(Date.now() + 100000).toISOString(),
             })
         }).then(data => {
             return chatServer.sendAction(roomID, data);
@@ -304,7 +307,7 @@ describe('#ui stageTest', function () {
     });
     it('#voteResult1 0-vote', function () {
         return dbServer.updatePlayRoom(roomID, {
-            ...defaultGameData, ...{
+            ...defaultTestData, ...{
                 "state.status": 'ingame',
                 "state.dayStage": "readyToGame",
                 "setup.4": ["duy1", "duy2", "duy3"],
@@ -317,7 +320,7 @@ describe('#ui stageTest', function () {
             return dbServer.updatePlayRoom(roomID, {
                 "state.dayStage": "voteResult",
                 "roleInfo.voteList": {},
-                "state.stageEnd": new Date(Date.now() + 10000).toISOString(),
+                "state.stageEnd": new Date(Date.now() + 100000).toISOString(),
             })
         }).then(data => {
             return chatServer.sendAction(roomID, data);
@@ -325,7 +328,7 @@ describe('#ui stageTest', function () {
     });
     it('#voteResult2 vote', function () {
         return dbServer.updatePlayRoom(roomID, {
-            ...defaultGameData, ...{
+            ...defaultTestData, ...{
                 "state.status": 'ingame',
                 "state.dayStage": "readyToGame",
                 "setup.4": ["duy1", "duy2", "duy3"],
@@ -339,7 +342,7 @@ describe('#ui stageTest', function () {
                 "state.dayStage": "voteResult",
                 "roleInfo.victimID": "duy1",
                 "roleTarget.voteList": { "duy1": "duy2", "duy2": "duy3", "duy3": "duy4", "duy4": "duy5", "duy5": "duy6", "duy6": "duy1" },
-                "state.stageEnd": new Date(Date.now() + 10000).toISOString(),
+                "state.stageEnd": new Date(Date.now() + 100000).toISOString(),
             })
         }).then(data => {
             return chatServer.sendAction(roomID, data);
@@ -347,7 +350,7 @@ describe('#ui stageTest', function () {
     });
     it('#lastWord', function () {
         return dbServer.updatePlayRoom(roomID, {
-            ...defaultGameData, ...{
+            ...defaultTestData, ...{
                 "state.status": 'ingame',
                 "state.dayStage": "readyToGame",
                 "setup.4": ["duy1", "duy2", "duy3"],
@@ -360,7 +363,7 @@ describe('#ui stageTest', function () {
             return dbServer.updatePlayRoom(roomID, {
                 "roleInfo.victimID": "duy1",
                 "state.dayStage": "lastWord",
-                "state.stageEnd": new Date(Date.now() + 10000).toISOString(),
+                "state.stageEnd": new Date(Date.now() + 100000).toISOString(),
             })
         }).then(data => {
             return chatServer.sendAction(roomID, data);
@@ -368,7 +371,7 @@ describe('#ui stageTest', function () {
     });
     it('#voteYesNo1', function () {
         return dbServer.updatePlayRoom(roomID, {
-            ...defaultGameData, ...{
+            ...defaultTestData, ...{
                 "state.status": 'ingame',
                 "state.dayStage": "readyToGame",
                 "setup.4": ["duy1", "duy2", "duy3"],
@@ -381,7 +384,7 @@ describe('#ui stageTest', function () {
             return dbServer.updatePlayRoom(roomID, {
                 "roleInfo.victimID": "duy1",
                 "state.dayStage": "voteYesNo",
-                "state.stageEnd": new Date(Date.now() + 10000).toISOString(),
+                "state.stageEnd": new Date(Date.now() + 100000).toISOString(),
             })
         }).then(data => {
             return chatServer.sendAction(roomID, data);
@@ -389,7 +392,7 @@ describe('#ui stageTest', function () {
     });
     it('#voteYesNoResult', function () {
         return dbServer.updatePlayRoom(roomID, {
-            ...defaultGameData, ...{
+            ...defaultTestData, ...{
                 "state.status": 'ingame',
                 "state.dayStage": "readyToGame",
                 "setup.4": ["duy1", "duy2", "duy3"],
@@ -403,7 +406,7 @@ describe('#ui stageTest', function () {
                 "state.dayStage": "voteYesNoResult",
                 "roleInfo.victimID": "duy1",
                 "roleTarget.voteList": { "duy1": "duy1", "duy2": "", "duy3": "", "duy4": "", "duy5": "", "duy6": "duy1" },
-                "state.stageEnd": new Date(Date.now() + 10000).toISOString(),
+                "state.stageEnd": new Date(Date.now() + 100000).toISOString(),
             })
         }).then(data => {
             return chatServer.sendAction(roomID, data);

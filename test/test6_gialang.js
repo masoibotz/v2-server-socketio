@@ -3,7 +3,10 @@ const ChatServer = require('../chatkit');
 const DBServer = require('../mongodb');
 
 const { postRequest, sendRequest } = require('./request');
-const { defaultGameData } = require('../Utils');
+const { defaultGameData, defaultSetup } = require('../Utils');
+
+const defaultTestData = { ...defaultGameData, ...defaultSetup };
+
 
 const roomID = "26851162";
 
@@ -14,7 +17,7 @@ describe('#6 Già làng test: duy1 là già làng', function () {
         this.timeout(100000);
         it('#6.1 già làng bị cắn lần 1, duy1 sống', function () {
             return dbServer.updatePlayRoom(roomID, {
-                ...defaultGameData, ...{
+                ...defaultTestData, ...{
                     "setup.6": ["duy1"],
                     "roleTarget.voteList": { "duy2": "duy1" },
                 }

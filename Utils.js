@@ -48,20 +48,21 @@ const roleName = {
     "8": '👽NGƯỜI HÓA SÓI', //await
     "9": '🧚‍THIÊN SỨ', //done
 }
+const defaultSetup = {
+    "setup.-3": [],
+    "setup.-2": [],
+    "setup.-1": [],
+    "setup.1": [],
+    "setup.2": [],
+    "setup.3": [],
+    "setup.4": [],
+    "setup.5": [],
+    "setup.6": [],
+    "setup.7": [],
+    "setup.8": [],
+    "setup.9": []
+}
 const defaultGameData = {
-    "setup.-3": "",
-    "setup.-2": "",
-    "setup.-1": "",
-    "setup.1": "",
-    "setup.2": "",
-    "setup.3": "",
-    "setup.4": "",
-    "setup.5": "",
-    "setup.6": "",
-    "setup.7": "",
-    "setup.8": "",
-    "setup.9": "",
-
     "state.day": 0,
     "players.coupleID": [],
 
@@ -169,6 +170,7 @@ module.exports = {
     phe: phe,
     roleName: roleName,
     defaultGameData: defaultGameData,
+    defaultSetup: defaultSetup,
     roleSetup: roleSetup,
     shuffleArray: shuffle,
     random: random

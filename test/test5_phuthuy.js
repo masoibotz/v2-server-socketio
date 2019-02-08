@@ -3,7 +3,10 @@ const ChatServer = require('../chatkit');
 const DBServer = require('../mongodb');
 
 const { postRequest, sendRequest } = require('./request');
-const { defaultGameData } = require('../Utils');
+const { defaultGameData, defaultSetup } = require('../Utils');
+
+const defaultTestData = { ...defaultGameData, ...defaultSetup };
+
 
 const roomID = "26851162";
 
@@ -14,7 +17,7 @@ describe('#5 Phù thủy test: duy1 là phù thủy', function () {
         this.timeout(100000);
         it('#5.1 phù thủy cứu, duy1 sống', function () {
             return dbServer.updatePlayRoom(roomID, {
-                ...defaultGameData, ...{
+                ...defaultTestData, ...{
                     "setup.5": ["duy1"],
                     "roleTarget.voteList": { "duy2": "duy1" },
                     "roleTarget.witchUseSave": true
@@ -33,7 +36,7 @@ describe('#5 Phù thủy test: duy1 là phù thủy', function () {
         });
         it('#5.2 phù thủy giết duy2, duy2 chết', function () {
             return dbServer.updatePlayRoom(roomID, {
-                ...defaultGameData, ...{
+                ...defaultTestData, ...{
                     "setup.5": ["duy1"],
                     "roleTarget.voteList": { "duy2": "duy1" },
                     "roleTarget.witchKillID": "duy2"

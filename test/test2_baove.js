@@ -3,7 +3,9 @@ const ChatServer = require('../chatkit');
 const DBServer = require('../mongodb');
 
 const { postRequest, sendRequest } = require('./request');
-const { defaultGameData } = require('../Utils');
+const { defaultGameData, defaultSetup } = require('../Utils');
+
+const defaultTestData = { ...defaultGameData, ...defaultSetup };
 
 const roomID = "26851162";
 
@@ -14,7 +16,7 @@ describe('#2 BẢO VỆ test', function () {
         this.timeout(100000);
         it('Sói cắn duy1, bảo vệ đúng! không ai chết cả!', function () {
             return dbServer.updatePlayRoom(roomID, {
-                ...defaultGameData, ...{
+                ...defaultTestData, ...{
                     "roleTarget.saveID": "duy1",
                     "roleTarget.voteList": { "duy2": "duy1" },
                 }
@@ -29,7 +31,7 @@ describe('#2 BẢO VỆ test', function () {
         });
         it('Sói cắn duy2, bảo vệ trượt, duy2 chết!', function () {
             return dbServer.updatePlayRoom(roomID, {
-                ...defaultGameData, ...{
+                ...defaultTestData, ...{
                     "roleTarget.saveID": "duy1",
                     "roleTarget.voteList": { "duy2": "duy2" },
                 }
@@ -48,7 +50,7 @@ describe('#2 BẢO VỆ test', function () {
         this.timeout(100000);
         it('Sói cắn duy1, ko ai chết nhưng vẫn gọi sói nguyền đảm bảo ko lộ!', function () {
             return dbServer.updatePlayRoom(roomID, {
-                ...defaultGameData, ...{
+                ...defaultTestData, ...{
                     "setup.-3": ["duy2"],
                     "roleTarget.saveID": "duy1",
                     "roleTarget.voteList": { "duy2": "duy1" },
@@ -63,7 +65,7 @@ describe('#2 BẢO VỆ test', function () {
         });
         it('Sói cắn duy2, duy2 chết, gọi sói nguyền!', function () {
             return dbServer.updatePlayRoom(roomID, {
-                ...defaultGameData, ...{
+                ...defaultTestData, ...{
                     "setup.-3": ["duy2"],
                     "roleTarget.saveID": "duy1",
                     "roleTarget.voteList": { "duy2": "duy2" },

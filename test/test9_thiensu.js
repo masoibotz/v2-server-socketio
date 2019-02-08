@@ -3,7 +3,10 @@ const ChatServer = require('../chatkit');
 const DBServer = require('../mongodb');
 
 const { postRequest, sendRequest } = require('./request');
-const { defaultGameData } = require('../Utils');
+const { defaultGameData, defaultSetup } = require('../Utils');
+
+const defaultTestData = { ...defaultGameData, ...defaultSetup };
+
 
 const roomID = "26851162";
 
@@ -14,7 +17,7 @@ describe('#9 THIÊN SỨ test: duy1 là thiên sứ', function () {
         this.timeout(100000);
         it('#9.1 thiên sứ an toàn ngày 1, thiên sứ về Dân', function () {
             return dbServer.updatePlayRoom(roomID, {
-                ...defaultGameData, ...{
+                ...defaultTestData, ...{
                     "state.day": 1,
                     "setup.9": ["duy1"],
                 }
@@ -31,7 +34,7 @@ describe('#9 THIÊN SỨ test: duy1 là thiên sứ', function () {
         this.timeout(100000);
         it('#9.2.1 thiên sứ đêm thắng', function () {
             return dbServer.updatePlayRoom(roomID, {
-                ...defaultGameData, ...{
+                ...defaultTestData, ...{
                     "setup.9": ["duy1"],
                     "state.day": 1,
                     "roleTarget.voteList": { "duy2": "duy1" },
@@ -46,7 +49,7 @@ describe('#9 THIÊN SỨ test: duy1 là thiên sứ', function () {
         });
         it('#9.2.2 thiên sứ ngày thắng', function () {
             return dbServer.updatePlayRoom(roomID, {
-                ...defaultGameData, ...{
+                ...defaultTestData, ...{
                     "setup.9": ["duy1"],
                     "state.day": 1,
                     "roleInfo.victimID": "duy1",

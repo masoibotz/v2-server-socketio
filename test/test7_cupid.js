@@ -3,7 +3,10 @@ const ChatServer = require('../chatkit');
 const DBServer = require('../mongodb');
 
 const { postRequest, sendRequest } = require('./request');
-const { defaultGameData } = require('../Utils');
+const { defaultGameData, defaultSetup } = require('../Utils');
+
+const defaultTestData = { ...defaultGameData, ...defaultSetup };
+
 
 const roomID = "26851162";
 
@@ -14,7 +17,7 @@ describe('#7 cupid/couple test: duy1 là cupid ghép đôi duy1, duy3', function
         this.timeout(100000);
         it('#7.0 cupid về dân', function () {
             return dbServer.updatePlayRoom(roomID, {
-                ...defaultGameData, ...{
+                ...defaultTestData, ...{
                     "roleTarget.coupleList": ["duy1", "duy3"],
                     "setup.7": ["duy1"],
                 }
@@ -33,7 +36,7 @@ describe('#7 cupid/couple test: duy1 là cupid ghép đôi duy1, duy3', function
         this.timeout(100000);
         it('#7.1.1 duy1 chết kéo theo duy3', function () {
             return dbServer.updatePlayRoom(roomID, {
-                ...defaultGameData, ...{
+                ...defaultTestData, ...{
                     "players.coupleID": ["duy1", "duy3"],
                     "setup.7": ["duy1"],
                     "roleTarget.voteList": { "duy2": "duy1" },
@@ -72,7 +75,7 @@ describe('#7 cupid/couple test: duy1 là cupid ghép đôi duy1, duy3', function
         this.timeout(100000);
         it('#7.2.1 duy1 chết kéo theo duy3', function () {
             return dbServer.updatePlayRoom(roomID, {
-                ...defaultGameData, ...{
+                ...defaultTestData, ...{
                     "players.coupleID": ["duy1", "duy3"],
                     "roleTarget.voteList": { "duy2": "duy1" },
                 }
