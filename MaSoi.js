@@ -208,7 +208,7 @@ async function goStage(chatServer, dbServer, roomID, stage, preSetup = [], autoN
             break;
     }
     await dbServer.updatePlayRoom(roomID, updateData, (playRoom) => {
-        if (!autoNextStage) return;
+        // if (!autoNextStage) return;
         let roleWin = gameIsEnd(playRoom);
         if (roleWin) {
             endGame(playRoom.roomChatID, dbServer, chatServer, roleWin);
@@ -221,6 +221,7 @@ async function goStage(chatServer, dbServer, roomID, stage, preSetup = [], autoN
         }
         var actionText = stageActionText(playRoom);
         chatServer.sendAction(roomID, playRoom, updateFlags, actionText);
+        if (!autoNextStage) return;
 
         //next stage
         if (stage != "endGame") {

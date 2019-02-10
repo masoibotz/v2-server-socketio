@@ -156,8 +156,8 @@ app.get('/play/:roomID/:onOff-ready/:userID', async (req, res) => {
 			}
 		})
 	}
-	await dbServer.updatePlayRoom(roomID, updateData).then(playRoom => {
-		chatServer.sendAction(roomID, 'ready', playRoom);
+	await dbServer.updatePlayRoom(roomID, updateData).then(data => {
+		chatServer.sendAction(roomID, data, 'ready', `${onOff ? "🌟" : "☆"}${data.players.names[userID]} đã ${onOff ? "sẵn sàng!" : "bỏ sẵn sàng!"}`);
 	});
 	console.log(`GET: /play/${roomID}/${onOff}-ready/${userID}`);
 	res.status(200).json({ success: true });
