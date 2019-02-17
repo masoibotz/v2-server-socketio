@@ -1,6 +1,6 @@
 const request = require('request');
 
-const serverHost = 'http://localhost:3001'; // https://masoiapp.herokuapp.com  // http://localhost:3001
+const serverHost = 'https://masoiapp.herokuapp.com'; // https://masoiapp.herokuapp.com  // http://localhost:3001
 
 async function postRequest(url, body) {
     return new Promise((resolve, reject) => {

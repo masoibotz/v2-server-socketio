@@ -17,12 +17,14 @@ app.use(cors())
 
 var roomIngame = [];
 
-app.get('/play/:roomID/end', (req, res) => {
+app.get('/play/:roomID/end', async (req, res) => {
 	const roomID = req.params.roomID;
-	console.log(`Phòng ${roomID}: ENDGAME BETA: stopping game...`);
+	console.log(`Phòng ${roomID}: FORCE ENDGAME...`);
 	roomIngame[roomID] = false;
-	endGame(roomID, dbServer, chatServer);
-	res.status(200).json({ success: true });
+	await dbServer.getPlayRoom(roomID).then((playRoom) => {
+		endGame(roomID, dbServer, chatServer, playRoom, 0);
+		res.status(200).json({ success: true });
+	})
 })
 app.get('/play/:roomID/start', async (req, res) => {
 	const roomID = req.params.roomID;
@@ -67,7 +69,7 @@ app.get('/play/:roomID/start', async (req, res) => {
 		})
 	})
 })
-app.get('/room/:roomID/messages', (req, res) => {
+app.get('/:roomOrPlay/:roomID/messages', (req, res) => {
 	const roomID = req.params.roomID;
 	const limit = req.query.limit;
 	const startBy = req.query.from;
@@ -193,6 +195,9 @@ app.get('/play/:roomID/leave/:userID', async (req, res) => {
 				return;
 			}
 		}
+		dbServer.unsetPlayRoom(roomID, {
+			[`players.ready.${userID}`]: 1
+		});
 		chatServer.leaveRoom(roomID, [userID]);
 		dbServer.updatePlayRoom(roomID, {
 			"roleInfo.deathList": [...playRoom.roleInfo.deathList, userID]
@@ -207,7 +212,7 @@ app.get('/play/:roomID/users', (req, res) => {
 		res.status(200).json(users);
 	})
 })
-app.get('/room/:roomID/status', (req, res) => {
+app.get('/:roomOrPlay/:roomID/status', (req, res) => {
 	const roomID = req.params.roomID;
 	console.log(`GET: /room/${roomID}/status`);
 	dbServer.connectRoom((collection) => {
@@ -232,7 +237,7 @@ app.get("/app/update", (req, res) => {
 		version: "1.0.1f_rc1",
 		status: "release",
 		releaseDate: "2019-02-01T11:47:06.238Z",
-		changeLog: "Fix tỉ bug :v ra mắt bản Release đầu tiên",
+		changeLog: "Phiên bản RC1",
 		downloadLink: "http://bit.ly/masoiapk"
 	})
 })

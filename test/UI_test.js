@@ -54,7 +54,10 @@ describe('#ui stageTest', function () {
                 "setup.4": ["duy4"],
                 "setup.5": ["duy5"],
                 "setup.6": ["duy6"],
+                "players.coupleID": ["duy4", "duy1"],
                 "roleInfo.deathList": ["duy5"],
+                "roleInfo.lastSaveID": "duy1",
+                "roleInfo.lastFireID": "duy1"
             }
         }).then(data => {
             return chatServer.sendAction(roomID, data);
@@ -79,6 +82,7 @@ describe('#ui stageTest', function () {
                 "setup.-2": ["duy5"],
                 "setup.-1": ["duy6"],
                 "players.wolfsID": ["duy4", "duy6"],
+                "players.coupleID": ["duy4", "duy6"],
                 "roleInfo.deathList": ["duy5"],
             }
         }).then(data => {

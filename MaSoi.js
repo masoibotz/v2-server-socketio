@@ -11,7 +11,7 @@ function randomRole(chatServer, dbServer, playRoom, roomID, customSetup) {
     }).then(readyUser => {
         console.log(`Phòng ${roomID}: SETUP cho ${readyUser.length} NGƯỜI`);
         if (readyUser.length <= 3 || readyUser.length >= 12) {
-            endGame(roomID, dbServer, chatServer, 0);
+            endGame(roomID, dbServer, chatServer, playRoom, 0);
             return;
         }
 
@@ -211,7 +211,7 @@ async function goStage(chatServer, dbServer, roomID, stage, preSetup = [], autoN
         // if (!autoNextStage) return;
         let roleWin = gameIsEnd(playRoom);
         if (roleWin) {
-            endGame(playRoom.roomChatID, dbServer, chatServer, roleWin);
+            endGame(playRoom.roomChatID, dbServer, chatServer, playRoom, roleWin);
             return;
         }
         console.log(`<<<<<<<<<<<<<<<< Phòng ${roomID}: goStage ${stage} <<<<<<<<<<<<<<<<`);
@@ -237,13 +237,25 @@ async function goStage(chatServer, dbServer, roomID, stage, preSetup = [], autoN
         }
     })
 }
-function endGame(roomID, dbServer, chatServer, roleWin) {
+function endGame(roomID, dbServer, chatServer, playRoom, roleWin) {
     if (roomSchedule[roomID]) {
         roomSchedule[roomID].cancel();
         roomSchedule[roomID] = 'ended';
     }
+    var updateData = { ...defaultGameData, ...{ "state.status": "waiting", "state.dayStage": "endGame", roleWin: roleWin } }
+    var updateReady = {};
+    Object.keys(playRoom.players.ready).filter((uid) => playRoom.players.ready[uid]).forEach((uid) => {
+        updateReady = {
+            ...updateReady, ...{
+                [`players.ready.${uid}`]: false
+            }
+        };
+    })
+    console.log("UPDATE READY", updateReady);
+    updateData = { ...updateData, ...updateReady };
+
     // setTimeout(() => { roomSchedule[roomID] = null; }, 5000);
-    let updateData = { ...defaultGameData, ...{ "state.status": "waiting", "state.dayStage": "endGame", roleWin: roleWin } }
+
     dbServer.updatePlayRoom(roomID, updateData, (playRoom) => {
         // chatServer.sendMessage(roomID, ["TRÒ CHƠI ĐÃ KẾT THÚC", `${phe[roleWin]} thắng`, ...playRoom.logs].join('\n'));
         chatServer.sendAction(roomID, playRoom, 'endGame', ["TRÒ CHƠI ĐÃ KẾT THÚC", `${phe[roleWin]} thắng`, ...playRoom.logs].join('\n'));

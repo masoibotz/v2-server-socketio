@@ -14,7 +14,7 @@ describe('#2 BẢO VỆ test', function () {
     const dbServer = new DBServer();
     describe('#1 Sói : Bảo vệ duy1', function () {
         this.timeout(100000);
-        it('Sói cắn duy1, bảo vệ đúng! không ai chết cả!', function () {
+        it('#2.1.1 Sói cắn duy1, bảo vệ đúng! không ai chết cả!', function () {
             return dbServer.updatePlayRoom(roomID, {
                 ...defaultTestData, ...{
                     "roleTarget.saveID": "duy1",

@@ -72,6 +72,20 @@ module.exports = class DBServer {
             })
         })
     }
+    unsetPlayRoom(roomID, updateData, callback = () => { }) {
+        return new Promise((resolve, reject) => {
+            this.connectRoom(collection => {
+                collection.findOneAndUpdate({ roomChatID: roomID }, {
+                    $unset: updateData,
+                }, { returnOriginal: false }, function (err, res) {
+                    if (err) throw err;
+                    console.log(`Phòng ${roomID}: Cập nhật unset `);
+                    callback(res.value);
+                    resolve(res.value);
+                });
+            })
+        })
+    }
     pushPlayRoom(roomID, pushData, callback = () => { }) {
         return new Promise((resolve, reject) => {
             this.connectRoom(collection => {
